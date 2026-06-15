@@ -1,0 +1,36 @@
+# WebToApp Kit
+
+> An Expo SDK 56 template that wraps a web app / PWA into a native iOS + Android app
+> that passes Apple App Store review (Guideline 4.2), configured by editing one file
+> (`client.config.js`). Designed for AI coding agents to operate end to end: configure,
+> validate, build, and submit. Target: a published app in hours, not days.
+
+Rules that matter most: edit only `client.config.js`; use the versioned Expo v56 docs
+(<https://docs.expo.dev/versions/v56.0.0/>); never strip the native features that get the
+app past Apple 4.2 (push, deep links, share).
+
+## Start here
+
+- [AGENTS.md](./AGENTS.md): The operator guide — read first. The whole per-client procedure, config schema, commands, the questions to ask a founder, and the 4.2 guardrails.
+- [client.config.js](./client.config.js): THE ONLY FILE YOU EDIT per client (name, bundleId, url, color, domains, feature toggles).
+- [src/ship.types.ts](./src/ship.types.ts): Authoritative `ClientConfig` / `ShipFeatures` schema — every field and its meaning.
+- [docs/ONBOARDING.md](./docs/ONBOARDING.md): Human checklist from clone to published, plus troubleshooting.
+
+## How it works (do not edit for a normal app)
+
+- [app.config.ts](./app.config.ts): Generates the full Expo config from `client.config.js` (bundle id, associatedDomains, intentFilters, plugins, `extra`).
+- [src/theme.ts](./src/theme.ts): Runtime config read from `Constants.expoConfig.extra`.
+- [src/App.tsx](./src/App.tsx): Offline gate + splash screen + safe areas.
+- [src/WebViewScreen.tsx](./src/WebViewScreen.tsx): Main screen — WebView, Android back handler, loading/error states, external-link handling, the native bridge.
+
+## The anti-4.2 native layer (keep it on)
+
+- [src/native/push.ts](./src/native/push.ts): Push registration (expo-notifications) — the strongest 4.2-approval signal.
+- [src/native/linking.ts](./src/native/linking.ts): Deep / universal links (iOS associatedDomains + Android intentFilters).
+- [src/native/bridge.ts](./src/native/bridge.ts): `window.ShipBridge` — native share + web↔native messaging.
+- [src/OfflineScreen.tsx](./src/OfflineScreen.tsx): Offline screen with auto-retry.
+
+## Build & ship
+
+- [eas.json](./eas.json): EAS build/submit profiles (development, preview, production).
+- [README.md](./README.md): Overview, the per-client job, the web bridge API.
