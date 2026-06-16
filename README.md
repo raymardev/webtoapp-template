@@ -1,46 +1,45 @@
-# webtoapp-template 🚀
+# WebToApp Kit — turn your web app into a native app that passes Apple review
 
-> The reusable Expo wrapper behind **Ship to Stores**. Turns a client's web/PWA
-> into a native app that **passes Apple review** — configured by editing one file.
+[![License: MIT](https://img.shields.io/badge/License-MIT-22c55e.svg)](./LICENSE)
+[![Expo SDK 56](https://img.shields.io/badge/Expo-SDK%2056-000.svg?logo=expo)](https://docs.expo.dev/versions/v56.0.0/)
+[![Passes Apple 4.2](https://img.shields.io/badge/Apple-built%20to%20pass%204.2-0a84ff.svg?logo=apple)](#why-apple-rejects-web-wrappers--and-how-this-passes)
 
-Part of the [Ship to Stores](https://raymartin.es/ship) service. Each client = clone this,
-edit `client.config.js`, swap two images, `eas build` + `eas submit`. Days → hours.
+> Wrap your **web app or PWA** into a native **iOS + Android** app — by editing **one file**.
+> The free, open-source template behind [**WebToApp Kit**](https://raymartin.es/ship).
 
-## Operate it with AI 🤖
+You built a great web app. The stores want a *native* one — and Apple **rejects** anything that's
+"just a website" (Guideline 4.2). This template ships the native layer that gets you **approved**,
+**without touching your web app**. Drive it with an AI agent, or do it by hand.
 
-Built to be driven by an AI coding agent (Claude Code, Cursor, …). Point your agent at the
-repo and it can configure and ship the app for you:
+📲 **Shipped & live on both stores:** [4Pets on the App Store](https://apps.apple.com/es/app/4pets-cuidado-de-mascotas/id6739944436) · [on Google Play](https://play.google.com/store/apps/details?id=care.fourpets.app)
 
-- **[`AGENTS.md`](./AGENTS.md)** — the operator runbook every agent reads first.
-- **[`llms.txt`](./llms.txt)** — a machine-readable map of the repo.
-- **`ship-my-app` skill** (Claude Code) — the conversational autopilot that runs the whole launch for you, available in **WebToApp Kit Pro** (raymartin.es/ship).
-
-Prefer to do it by hand? The steps below still work.
-
-## The whole job per client
+## Quick start
 
 ```bash
-1. degit raymardev/webtoapp-template acme-app   # new copy
-2. edit client.config.js                          # name, bundleId, url, color, domains
-3. drop your logo at assets/logo.png → npm run assets   # generates every icon/splash
-4. npm run validate && eas init && eas build && eas submit
+1. npx degit raymardev/webtoapp-template my-app   # fresh copy
+2. edit client.config.js                          # name, bundleId, url, color, domains  ← the only file
+3. drop your logo at assets/logo.png → npm run assets   # generates every icon + splash
+4. npm run validate                               # config + Apple 4.2 gate + asset standards
+5. eas init && eas build && eas submit            # build & ship (your Apple/Google accounts)
 ```
 
-## What's in the box (the anti-4.2 layer)
+`client.config.js` is the **only** file you edit.
 
-Apple rejects apps that are "just a website" (Guideline 4.2). This template ships the
-native capabilities that get it approved — **without touching the client's web app**:
+## Why Apple rejects web wrappers — and how this passes
+
+Apple Guideline **4.2** rejects apps that are "just a website in a shell." This template ships the
+native capabilities that earn approval — **without changing a line of your web app**:
 
 - **Robust WebView** — native loading, error screen with retry, external links open in the system browser
-- **Push notifications** (`expo-notifications`) — auto token registration, forwarded to the web via `window.ShipBridge`
+- **Push notifications** (`expo-notifications`) — auto token registration, forwarded to your web app via `window.ShipBridge`
 - **Deep / universal links** — open web routes from notifications and links (iOS `associatedDomains` + Android `intentFilters`)
-- **Offline screen** with auto-retry (`@react-native-community/netinfo`)
-- **Pull-to-refresh**, **safe areas**, **Android hardware back** (navigates WebView history)
+- **Offline screen** with auto-retry, **pull-to-refresh**, **safe areas**, **Android hardware back**
 - **Native share** + a documented **`window.ShipBridge`** (web ↔ native messaging)
 
-## Configuration — one file
+Keep push + at least one native feature on — that's what gets you past 4.2. The `npm run validate`
+gate **fails on a bare WebView**, so you don't get surprised at review time.
 
-Everything per-client lives in [`client.config.js`](./client.config.js):
+## One file: `client.config.js`
 
 ```js
 const config = {
@@ -54,15 +53,40 @@ const config = {
 };
 ```
 
-`app.config.ts` reads it and generates the full Expo config. You normally never touch
-anything else.
+`app.config.ts` reads it and generates the full Expo config. You normally never touch anything else.
+
+## Operate it with AI 🤖
+
+Built to be driven by an AI coding agent (Claude Code, Cursor, …):
+
+- **[`AGENTS.md`](./AGENTS.md)** — the operator runbook every agent reads first ([agents.md](https://agents.md) standard)
+- **[`llms.txt`](./llms.txt)** — a machine-readable map of the repo ([llmstxt.org](https://llmstxt.org))
+
+Point your agent at the repo and say *"ship my app to the stores"* — it configures, validates, and
+walks you through the build. The full conversational autopilot (the `ship-my-app` skill) ships with **Pro** ↓
+
+## Free vs Pro vs Done-for-you
+
+| | This template · **free** | [**Kit Pro**](https://raymartin.es/ship) · €99 | [**Done-for-you**](https://raymartin.es/ship) · from €900 |
+|---|:---:|:---:|:---:|
+| Full anti-4.2 native wrapper | ✅ | ✅ | ✅ |
+| One-file config + asset generator | ✅ | ✅ | ✅ |
+| `npm run validate` 4.2 gate | ✅ | ✅ | ✅ |
+| AI agent docs (AGENTS.md, llms.txt) | ✅ | ✅ | ✅ |
+| **`ship-my-app` AI operator** (runs the launch) | — | ✅ | ✅ |
+| **Store-readiness auditor** (Apple/Play pre-check) | — | ✅ | ✅ |
+| **One-command release** + **OTA updates** | — | ✅ | ✅ |
+| **Lifetime updates** as Expo's SDK moves | — | ✅ | ✅ |
+| Private support | — | ✅ | ✅ |
+| **We publish it for you** | — | — | ✅ |
+
+→ **[Get Pro or hire the done-for-you service at raymartin.es/ship](https://raymartin.es/ship)**
 
 ## The web bridge
 
-The client's web app can opt into native features (no native code required):
+Your web app can opt into native features — no native code:
 
 ```js
-// in the client's web app
 window.ShipBridge?.share({ title: "Acme", message: "Check this", url: location.href });
 window.addEventListener("ShipPushToken", (e) => console.log("push token", e.detail));
 ```
@@ -70,28 +94,30 @@ window.addEventListener("ShipPushToken", (e) => console.log("push token", e.deta
 ## Structure
 
 ```
-client.config.js        ← edit this per client
-client.config.d.ts      ← its types (don't edit)
+client.config.js        ← edit this. The only one.
 app.config.ts           ← generates Expo config from client.config
-eas.json                ← build/submit profiles
-assets/                 ← drop logo.png, then `npm run assets` generates the rest
+assets/                 ← drop logo.png, then `npm run assets`
 src/
 ├── App.tsx             ← offline gate + splash + safe areas
 ├── WebViewScreen.tsx   ← WebView + back handler + bridge + links
-├── OfflineScreen.tsx
 ├── ship.types.ts       ← shared config types
 ├── components/         ← LoadingScreen, ErrorScreen
-└── native/             ← push.ts, linking.ts, bridge.ts
+└── native/             ← push.ts, linking.ts, bridge.ts  (the anti-4.2 layer)
 ```
 
 ## Commands
 
 ```bash
+npm run assets       # generate every icon + splash from assets/logo.png
+npm run validate     # pre-flight: config + Apple 4.2 + asset standards
 npm start            # Expo dev server
-npm run ios          # run on iOS simulator/device
-npm run android      # run on Android
+npm run ios | npm run android
 npx tsc --noEmit     # typecheck
-npx expo export --platform ios   # validate the JS bundle
 ```
 
-See [`docs/ONBOARDING.md`](./docs/ONBOARDING.md) for the full per-client checklist.
+See [`docs/ONBOARDING.md`](./docs/ONBOARDING.md) for the full checklist (accounts, privacy policy, store listings).
+
+## License
+
+MIT © Ray Martín. Built with [Expo](https://expo.dev).
+Want the AI autopilot or someone to publish it for you? → **[raymartin.es/ship](https://raymartin.es/ship)**
