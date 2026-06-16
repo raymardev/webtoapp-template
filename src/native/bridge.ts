@@ -1,25 +1,25 @@
 /**
  * Web ↔ native bridge.
  *
- * The injected script exposes `window.ShipBridge` to the client's web app so it
+ * The injected script exposes `window.WebToAppBridge` to the client's web app so it
  * can trigger native capabilities. The web app never has to know it's wrapped —
  * but if it wants native share / badges / push, these hooks are here.
  */
 
 export const INJECTED_BRIDGE = `
 (function () {
-  if (window.ShipBridge) return;
+  if (window.WebToAppBridge) return;
   function send(type, payload) {
     if (window.ReactNativeWebView) {
       window.ReactNativeWebView.postMessage(JSON.stringify({ type: type, payload: payload || {} }));
     }
   }
-  window.ShipBridge = {
+  window.WebToAppBridge = {
     share: function (data) { send('share', data); },
     setBadge: function (count) { send('setBadge', { count: count }); },
     ready: function () { send('ready', {}); },
   };
-  window.dispatchEvent(new Event('ShipBridgeReady'));
+  window.dispatchEvent(new Event('WebToAppBridgeReady'));
 })();
 true;
 `;

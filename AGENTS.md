@@ -48,7 +48,7 @@ see [`docs/ONBOARDING.md`](./docs/ONBOARDING.md).
 ## The one file: `client.config.js`
 
 `app.config.ts` reads this and generates the entire Expo config. Schema
-(authoritative source: [`src/ship.types.ts`](./src/ship.types.ts)):
+(authoritative source: [`src/webtoapp.types.ts`](./src/webtoapp.types.ts)):
 
 | Field | Type | How to derive it | Example |
 |-------|------|------------------|---------|
@@ -63,7 +63,7 @@ see [`docs/ONBOARDING.md`](./docs/ONBOARDING.md).
 | `backgroundColor` | string | Splash / app background. | `"#0b1020"` |
 | `associatedDomains` | string[] | Domains for iOS universal links + Android app links. **No protocol.** Empty `[]` if not using links. | `["app.acme.com"]` |
 | `features.push` | boolean | Register for push (expo-notifications). Strong 4.2 signal — keep `true`. | `true` |
-| `features.share` | boolean | Native share via `window.ShipBridge`. | `true` |
+| `features.share` | boolean | Native share via `window.WebToAppBridge`. | `true` |
 | `features.pullToRefresh` | boolean | Pull down to reload. | `true` |
 | `features.ota` | boolean? | **Pro/Autopilot:** over-the-air JS updates (expo-updates). Needs `eas.projectId`. Off by default. | `true` |
 | `eas.projectId` | string | Filled after `eas init`. Required for push to work. | `"..."` |
@@ -101,7 +101,7 @@ Apple rejects apps that are "just a website." This template ships the native lay
 gets approval **without touching the founder's web app**:
 
 - Native push (`src/native/push.ts`), deep/universal links (`src/native/linking.ts`),
-  native share + a `window.ShipBridge` (`src/native/bridge.ts`)
+  native share + a `window.WebToAppBridge` (`src/native/bridge.ts`)
 - Robust WebView: loading, error-with-retry, offline screen, pull-to-refresh, safe areas,
   Android hardware back, external links open in the system browser (`src/WebViewScreen.tsx`)
 
@@ -140,7 +140,7 @@ src/
 ├── App.tsx              ← offline gate + splash + safe areas
 ├── WebViewScreen.tsx    ← WebView + back handler + bridge + links
 ├── OfflineScreen.tsx
-├── ship.types.ts        ← the ClientConfig schema (authoritative)
+├── webtoapp.types.ts        ← the ClientConfig schema (authoritative)
 ├── theme.ts             ← runtime config from app.config extra
 ├── components/          ← LoadingScreen, ErrorScreen
 └── native/              ← push.ts, linking.ts, bridge.ts  (the anti-4.2 layer)

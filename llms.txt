@@ -13,7 +13,7 @@ app past Apple 4.2 (push, deep links, share).
 
 - [AGENTS.md](./AGENTS.md): The operator guide — read first. The whole per-client procedure, config schema, commands, the questions to ask a founder, and the 4.2 guardrails.
 - [client.config.js](./client.config.js): THE ONLY FILE YOU EDIT per client (name, bundleId, url, color, domains, feature toggles).
-- [src/ship.types.ts](./src/ship.types.ts): Authoritative `ClientConfig` / `ShipFeatures` schema — every field and its meaning.
+- [src/webtoapp.types.ts](./src/webtoapp.types.ts): Authoritative `ClientConfig` / `WebToAppFeatures` schema — every field and its meaning.
 - [docs/ONBOARDING.md](./docs/ONBOARDING.md): Human checklist from clone to published, plus troubleshooting.
 
 ## How it works (do not edit for a normal app)
@@ -27,7 +27,7 @@ app past Apple 4.2 (push, deep links, share).
 
 - [src/native/push.ts](./src/native/push.ts): Push registration (expo-notifications) — the strongest 4.2-approval signal.
 - [src/native/linking.ts](./src/native/linking.ts): Deep / universal links (iOS associatedDomains + Android intentFilters).
-- [src/native/bridge.ts](./src/native/bridge.ts): `window.ShipBridge` — native share + web↔native messaging.
+- [src/native/bridge.ts](./src/native/bridge.ts): `window.WebToAppBridge` — native share + web↔native messaging.
 - [src/OfflineScreen.tsx](./src/OfflineScreen.tsx): Offline screen with auto-retry.
 
 ## Build & ship

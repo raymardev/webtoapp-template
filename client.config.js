@@ -7,7 +7,7 @@
  * │  `npm run assets`, then `eas build` + `eas submit`.           │
  * └──────────────────────────────────────────────────────────────┘
  *
- * @type {import("./src/ship.types").ClientConfig}
+ * @type {import("./src/webtoapp.types").ClientConfig}
  */
 const config = {
 	name: "Ship Demo",

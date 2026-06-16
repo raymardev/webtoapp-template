@@ -5,7 +5,7 @@
 [![Passes Apple 4.2](https://img.shields.io/badge/Apple-built%20to%20pass%204.2-0a84ff.svg?logo=apple)](#why-apple-rejects-web-wrappers--and-how-this-passes)
 
 > Wrap your **web app or PWA** into a native **iOS + Android** app — by editing **one file**.
-> The free, open-source template behind [**WebToApp Kit**](https://raymartin.es/ship).
+> The free, open-source template behind [**WebToApp Kit**](https://raymartin.es/webtoapp).
 
 You built a great web app. The stores want a *native* one — and Apple **rejects** anything that's
 "just a website" (Guideline 4.2). This template ships the native layer that gets you **approved**,
@@ -31,10 +31,10 @@ Apple Guideline **4.2** rejects apps that are "just a website in a shell." This 
 native capabilities that earn approval — **without changing a line of your web app**:
 
 - **Robust WebView** — native loading, error screen with retry, external links open in the system browser
-- **Push notifications** (`expo-notifications`) — auto token registration, forwarded to your web app via `window.ShipBridge`
+- **Push notifications** (`expo-notifications`) — auto token registration, forwarded to your web app via `window.WebToAppBridge`
 - **Deep / universal links** — open web routes from notifications and links (iOS `associatedDomains` + Android `intentFilters`)
 - **Offline screen** with auto-retry, **pull-to-refresh**, **safe areas**, **Android hardware back**
-- **Native share** + a documented **`window.ShipBridge`** (web ↔ native messaging)
+- **Native share** + a documented **`window.WebToAppBridge`** (web ↔ native messaging)
 
 Keep push + at least one native feature on — that's what gets you past 4.2. The `npm run validate`
 gate **fails on a bare WebView**, so you don't get surprised at review time.
@@ -67,7 +67,7 @@ walks you through the build. The full conversational autopilot (the `ship-my-app
 
 ## Free vs Pro vs Done-for-you
 
-| | This template · **free** | [**Kit Pro**](https://raymartin.es/ship) · €99 | [**Done-for-you**](https://raymartin.es/ship) · from €900 |
+| | This template · **free** | [**Kit Pro**](https://raymartin.es/webtoapp) · €99 | [**Done-for-you**](https://raymartin.es/webtoapp) · from €900 |
 |---|:---:|:---:|:---:|
 | Full anti-4.2 native wrapper | ✅ | ✅ | ✅ |
 | One-file config + asset generator | ✅ | ✅ | ✅ |
@@ -80,14 +80,14 @@ walks you through the build. The full conversational autopilot (the `ship-my-app
 | Private support | — | ✅ | ✅ |
 | **We publish it for you** | — | — | ✅ |
 
-→ **[Get Pro or hire the done-for-you service at raymartin.es/ship](https://raymartin.es/ship)**
+→ **[Get Pro or hire the done-for-you service at raymartin.es/webtoapp](https://raymartin.es/webtoapp)**
 
 ## The web bridge
 
 Your web app can opt into native features — no native code:
 
 ```js
-window.ShipBridge?.share({ title: "Acme", message: "Check this", url: location.href });
+window.WebToAppBridge?.share({ title: "Acme", message: "Check this", url: location.href });
 window.addEventListener("ShipPushToken", (e) => console.log("push token", e.detail));
 ```
 
@@ -100,7 +100,7 @@ assets/                 ← drop logo.png, then `npm run assets`
 src/
 ├── App.tsx             ← offline gate + splash + safe areas
 ├── WebViewScreen.tsx   ← WebView + back handler + bridge + links
-├── ship.types.ts       ← shared config types
+├── webtoapp.types.ts       ← shared config types
 ├── components/         ← LoadingScreen, ErrorScreen
 └── native/             ← push.ts, linking.ts, bridge.ts  (the anti-4.2 layer)
 ```
@@ -120,4 +120,4 @@ See [`docs/ONBOARDING.md`](./docs/ONBOARDING.md) for the full checklist (account
 ## License
 
 MIT © Ray Martín. Built with [Expo](https://expo.dev).
-Want the AI autopilot or someone to publish it for you? → **[raymartin.es/ship](https://raymartin.es/ship)**
+Want the AI autopilot or someone to publish it for you? → **[raymartin.es/webtoapp](https://raymartin.es/webtoapp)**

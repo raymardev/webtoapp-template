@@ -1,7 +1,7 @@
-export type ShipFeatures = {
+export type WebToAppFeatures = {
 	/** Register for and receive push notifications (expo-notifications). */
 	push: boolean;
-	/** Expose native share via the window.ShipBridge bridge. */
+	/** Expose native share via the window.WebToAppBridge bridge. */
 	share: boolean;
 	/** Pull down on the WebView to reload. */
 	pullToRefresh: boolean;
@@ -31,7 +31,7 @@ export type ClientConfig = {
 	/** Domains for iOS universal links + Android app links (no protocol). */
 	associatedDomains: string[];
 	/** Toggle native capabilities. */
-	features: ShipFeatures;
+	features: WebToAppFeatures;
 	/** EAS project id (filled after `eas init`). */
 	eas?: { projectId?: string };
 };

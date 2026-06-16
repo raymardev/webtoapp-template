@@ -1,11 +1,11 @@
 import Constants from "expo-constants";
-import type { ShipFeatures } from "./ship.types";
+import type { WebToAppFeatures } from "./webtoapp.types";
 
 type Extra = {
 	shipUrl?: string;
 	primaryColor?: string;
 	backgroundColor?: string;
-	features?: ShipFeatures;
+	features?: WebToAppFeatures;
 	eas?: { projectId?: string };
 };
 
