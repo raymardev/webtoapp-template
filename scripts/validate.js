@@ -32,7 +32,9 @@ try {
 
 const isStr = (v) => typeof v === "string" && v.trim().length > 0;
 const HEX = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
-const BUNDLE = /^[a-zA-Z][a-zA-Z0-9]*(\.[a-zA-Z][a-zA-Z0-9-]*)+$/; // reverse-DNS, 2+ segments
+// Reverse-DNS, 2+ segments. No hyphens: iOS tolerates them but an Android package
+// name must be a valid Java identifier per segment, so a hyphen fails the build.
+const BUNDLE = /^[a-zA-Z][a-zA-Z0-9]*(\.[a-zA-Z][a-zA-Z0-9]*)+$/;
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const SCHEME = /^[a-z][a-z0-9+.-]*$/;
 
@@ -58,7 +60,7 @@ else ok(`slug: ${config.slug}`);
 
 // --- bundleId (immutable after first submit) ---
 if (!isStr(config.bundleId)) err("bundleId is required");
-else if (!BUNDLE.test(config.bundleId)) err(`bundleId must be reverse-DNS like com.acme.app (got "${config.bundleId}")`);
+else if (!BUNDLE.test(config.bundleId)) err(`bundleId must be reverse-DNS like com.acme.app — letters and digits only per segment, no hyphens or underscores (Android rejects them) (got "${config.bundleId}")`);
 else if (config.bundleId === DEFAULTS.bundleId) warn(`bundleId is still the template default ("${DEFAULTS.bundleId}") — it is IMMUTABLE after first submit, set it now`);
 else ok(`bundleId: ${config.bundleId}`);
 
@@ -104,6 +106,29 @@ if (!Array.isArray(config.associatedDomains)) {
 const f = config.features || {};
 for (const key of ["push", "share", "pullToRefresh"]) {
 	if (typeof f[key] !== "boolean") err(`features.${key} must be true or false`);
+}
+
+// --- allowedHosts (stay in-app: OAuth, checkout) ---
+if (config.allowedHosts !== undefined) {
+	if (!Array.isArray(config.allowedHosts)) {
+		err("allowedHosts must be an array of bare hosts (use [] or omit it)");
+	} else {
+		for (const h of config.allowedHosts) {
+			if (typeof h !== "string") err(`allowedHosts entries must be strings (got ${typeof h})`);
+			else if (/^https?:\/\//.test(h)) err(`allowedHosts must NOT include the protocol (got "${h}")`);
+			else if (h.includes("/")) err(`allowedHosts must be a bare host with no path (got "${h}")`);
+			else ok(`in-app host: ${h}`);
+		}
+	}
+}
+
+// --- version ---
+if (config.version !== undefined) {
+	if (!isStr(config.version) || !/^\d+(\.\d+){1,2}$/.test(config.version)) {
+		err(`version must look like 1.0.0 (got "${config.version}")`);
+	} else {
+		ok(`version: ${config.version}`);
+	}
 }
 
 // --- optional features ---

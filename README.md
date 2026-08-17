@@ -33,7 +33,7 @@ native capabilities that earn approval — **without changing a line of your web
 - **Robust WebView** — native loading, error screen with retry, external links open in the system browser
 - **Push notifications** (`expo-notifications`) — auto token registration, forwarded to your web app via `window.WebToAppBridge`
 - **Deep / universal links** — open web routes from notifications and links (iOS `associatedDomains` + Android `intentFilters`)
-- **Offline screen** with auto-retry, **pull-to-refresh**, **safe areas**, **Android hardware back**
+- **Offline screen** with auto-retry, **pull-to-refresh** (iOS), **safe areas**, **Android hardware back**
 - **Native share** + a documented **`window.WebToAppBridge`** (web ↔ native messaging)
 
 Keep push + at least one native feature on — that's what gets you past 4.2. The `npm run validate`

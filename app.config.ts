@@ -10,7 +10,10 @@ const otaConfig: Partial<ExpoConfig> =
 	client.features.ota && client.eas?.projectId
 		? {
 			updates: { url: `https://u.expo.dev/${client.eas.projectId}` },
-			runtimeVersion: { policy: "appVersion" },
+			// "fingerprint" bumps the runtime version whenever anything affecting the
+			// native runtime changes. "appVersion" only tracks `version`, so forgetting
+			// to bump it ships a JS update to a binary that cannot run it.
+			runtimeVersion: { policy: "fingerprint" },
 		}
 		: {};
 
@@ -18,7 +21,7 @@ const config: ExpoConfig = {
 	name: client.name,
 	slug: client.slug,
 	scheme: client.scheme,
-	version: "1.0.0",
+	version: client.version ?? "1.0.0",
 	orientation: "portrait",
 	icon: "./assets/icon.png",
 	userInterfaceStyle: "automatic",
@@ -31,6 +34,12 @@ const config: ExpoConfig = {
 			// Declaring it here answers App Store Connect's export-compliance question
 			// automatically instead of once per submission.
 			ITSAppUsesNonExemptEncryption: false,
+			// iOS terminates the app if the web app requests camera/mic/photos without
+			// a purpose string. Required because the WebView allows getUserMedia and
+			// `<input type="file" capture>`; Apple also rejects vague wording.
+			NSCameraUsageDescription: `${client.name} uses the camera when you take or upload a photo.`,
+			NSMicrophoneUsageDescription: `${client.name} uses the microphone when you record audio or video.`,
+			NSPhotoLibraryUsageDescription: `${client.name} needs your photo library so you can upload images.`,
 		},
 	},
 	android: {
@@ -72,6 +81,7 @@ const config: ExpoConfig = {
 	],
 	extra: {
 		url: client.url,
+		allowedHosts: client.allowedHosts ?? [],
 		primaryColor: client.primaryColor,
 		backgroundColor: client.backgroundColor,
 		features: client.features,

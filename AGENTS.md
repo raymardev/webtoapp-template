@@ -59,12 +59,14 @@ see [`docs/ONBOARDING.md`](./docs/ONBOARDING.md).
 | `url` | string | The web app the wrapper loads. Must be HTTPS and not block framing. | `"https://app.acme.com"` |
 | `logo` | string | Source logo for `npm run assets` (square PNG, 1024×1024). Default `./assets/logo.png`. | `"./assets/logo.png"` |
 | `iconScale` | number? | Icon fill: `1` = full-bleed (a finished/square logo), `~0.8` = padded on bg (a bare symbol). Default `0.8`. | `1` |
-| `primaryColor` | string | Brand accent (loaders, pull-to-refresh spinner). | `"#00d08c"` |
+| `primaryColor` | string | Brand accent (loading spinner, error-screen button). | `"#00d08c"` |
 | `backgroundColor` | string | Splash / app background. | `"#0b1020"` |
 | `associatedDomains` | string[] | Domains for iOS universal links + Android app links. **No protocol.** Empty `[]` if not using links. | `["app.acme.com"]` |
+| `allowedHosts` | string[]? | Extra hosts that stay **inside** the app. Anything off `url`'s host opens in the system browser, which breaks OAuth / hosted checkout — list those hosts here. | `["accounts.google.com"]` |
+| `version` | string? | Marketing version. Bump per store release. Default `"1.0.0"`. | `"1.2.0"` |
 | `features.push` | boolean | Register for push (expo-notifications). Strong 4.2 signal — keep `true`. | `true` |
 | `features.share` | boolean | Native share via `window.WebToAppBridge`. | `true` |
-| `features.pullToRefresh` | boolean | Pull down to reload. | `true` |
+| `features.pullToRefresh` | boolean | Pull down to reload. **iOS only** — no-op on Android. | `true` |
 | `features.ota` | boolean? | **Pro/Autopilot:** over-the-air JS updates (expo-updates). Needs `eas.projectId`. Off by default. | `true` |
 | `eas.projectId` | string | Filled after `eas init`. Required for push to work. | `"..."` |
 

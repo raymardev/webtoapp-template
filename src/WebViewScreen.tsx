@@ -25,10 +25,17 @@ const BASE_HOST = (() => {
 	}
 })();
 
-/** Whether a URL belongs to the client's own web app (stays in the WebView). */
+/**
+ * Whether a URL should stay inside the app rather than open in the system browser.
+ *
+ * The client's own host, plus any host the founder listed in `allowedHosts` — an
+ * OAuth provider or hosted checkout navigates off-host and back, and ejecting it to
+ * Safari strands the user outside the app mid-flow.
+ */
 function isInternal(url: string): boolean {
 	try {
-		return new URL(url).host === BASE_HOST;
+		const { host } = new URL(url);
+		return host === BASE_HOST || config.allowedHosts.includes(host);
 	} catch {
 		return false;
 	}
@@ -38,14 +45,26 @@ export default function WebViewScreen() {
 	const webRef = useRef<WebView>(null);
 	const pushTokenRef = useRef<string | null>(null);
 	const [uri, setUri] = useState(config.url);
+	const uriRef = useRef(config.url);
 	const [loading, setLoading] = useState(true);
 	const [errored, setErrored] = useState(false);
 	const [canGoBack, setCanGoBack] = useState(false);
+
+	// The URL actually on screen, which drifts from `uri` as the user browses.
+	// Retrying after an error must return here, not to the entry page.
+	const currentUrlRef = useRef(config.url);
 
 	// Deep / universal links → navigate the WebView.
 	const navigateTo = useCallback((url: string) => {
 		setErrored(false);
 		setLoading(true);
+		// Re-opening the URL already in state changes nothing, so no load would start
+		// and the spinner would never clear. Reload imperatively instead.
+		if (uriRef.current === url) {
+			webRef.current?.reload();
+			return;
+		}
+		uriRef.current = url;
 		setUri(url);
 	}, []);
 	useDeepLink(navigateTo);
@@ -87,7 +106,15 @@ export default function WebViewScreen() {
 	const reload = useCallback(() => {
 		setErrored(false);
 		setLoading(true);
-		webRef.current?.reload();
+		// While errored the WebView is unmounted, so `reload()` on the ref is a no-op —
+		// remount it pointed at the page the user was actually on.
+		const target = currentUrlRef.current;
+		if (target !== uriRef.current) {
+			uriRef.current = target;
+			setUri(target);
+		} else {
+			webRef.current?.reload();
+		}
 	}, []);
 
 	const onMessage = useCallback((event: WebViewMessageEvent) => {
@@ -109,13 +136,15 @@ export default function WebViewScreen() {
 		const { url, isTopFrame } = request;
 		if (isTopFrame === false) return true;
 		if (url.startsWith("http://") || url.startsWith("https://")) {
+			let host: string;
 			try {
-				if (new URL(url).host !== BASE_HOST) {
-					Linking.openURL(url).catch(() => {});
-					return false;
-				}
+				host = new URL(url).host;
 			} catch {
-				return true;
+				return true; // unparseable — leave it to the WebView rather than eject it
+			}
+			if (host !== BASE_HOST && !config.allowedHosts.includes(host)) {
+				Linking.openURL(url).catch(() => {});
+				return false;
 			}
 			return true;
 		}
@@ -138,6 +167,7 @@ export default function WebViewScreen() {
 
 	const onNavStateChange = useCallback((nav: WebViewNavigation) => {
 		setCanGoBack(nav.canGoBack);
+		if (nav.url && nav.url !== "about:blank") currentUrlRef.current = nav.url;
 	}, []);
 
 	const onLoadEnd = useCallback(() => {
@@ -186,7 +216,9 @@ export default function WebViewScreen() {
 				pullToRefreshEnabled={config.features.pullToRefresh}
 				allowsBackForwardNavigationGestures
 				startInLoadingState={false}
-				// Video plays inline instead of hijacking the screen in a native player.
+				// Match how the site already behaves in a browser: video plays inline
+				// instead of being forced into a fullscreen native player, and autoplay
+				// (which a WebView blocks by default, even when muted) is allowed.
 				allowsInlineMediaPlayback
 				mediaPlaybackRequiresUserAction={false}
 				// Let the web app use getUserMedia (camera/mic) without a second prompt

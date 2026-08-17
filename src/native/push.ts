@@ -52,11 +52,24 @@ export async function registerForPushNotifications(): Promise<string | null> {
 	}
 }
 
-/** A URL carried on a notification payload, as `data.url`. */
+/**
+ * A URL carried on a notification payload, as `data.url`.
+ *
+ * Resolved against the configured site and pinned to its origin: a push payload is
+ * attacker-influencable input, and the deep-link path is already origin-pinned, so
+ * this must not become the one way to point the WebView at an arbitrary site.
+ * Relative paths ("/orders/42") work, which is usually what you want to send anyway.
+ */
 function urlFromResponse(response: Notifications.NotificationResponse): string | null {
 	const data = response.notification.request.content.data as { url?: unknown } | null;
 	const url = data?.url;
-	return typeof url === "string" && url.length > 0 ? url : null;
+	if (typeof url !== "string" || url.length === 0) return null;
+	try {
+		const resolved = new URL(url, config.url);
+		return resolved.origin === new URL(config.url).origin ? resolved.href : null;
+	} catch {
+		return null;
+	}
 }
 
 /**

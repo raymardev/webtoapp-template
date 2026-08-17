@@ -3,6 +3,7 @@ import type { WebToAppFeatures } from "./webtoapp.types";
 
 type Extra = {
 	url?: string;
+	allowedHosts?: string[];
 	primaryColor?: string;
 	backgroundColor?: string;
 	features?: WebToAppFeatures;
@@ -14,6 +15,7 @@ const extra = (Constants.expoConfig?.extra ?? {}) as Extra;
 /** Runtime config, read from app.config.ts `extra` (which comes from client.config.js). */
 export const config = {
 	url: extra.url ?? "https://docs.expo.dev",
+	allowedHosts: extra.allowedHosts ?? [],
 	primaryColor: extra.primaryColor ?? "#00d08c",
 	backgroundColor: extra.backgroundColor ?? "#050a18",
 	features: extra.features ?? { push: true, share: true, pullToRefresh: true },

@@ -3,7 +3,10 @@ export type WebToAppFeatures = {
 	push: boolean;
 	/** Expose native share via the window.WebToAppBridge bridge. */
 	share: boolean;
-	/** Pull down on the WebView to reload. */
+	/**
+	 * Pull down on the WebView to reload. **iOS only** — react-native-webview's
+	 * `pullToRefreshEnabled` is an iOS prop, so this is a no-op on Android.
+	 */
 	pullToRefresh: boolean;
 	/** Over-the-air JS updates via expo-updates (Pro / Autopilot). Requires eas.projectId. */
 	ota?: boolean;
@@ -20,6 +23,8 @@ export type ClientConfig = {
 	scheme: string;
 	/** The web app the wrapper loads. */
 	url: string;
+	/** Marketing version (iOS CFBundleShortVersionString / Android versionName). Bump per store release. Default "1.0.0". */
+	version?: string;
 	/** Source logo for `npm run assets` (square PNG, 1024×1024 recommended). */
 	logo?: string;
 	/** Icon fill: 1 = full-bleed (finished/square logo), ~0.8 = padded on bg (bare symbol). Default 0.8. */
@@ -30,6 +35,14 @@ export type ClientConfig = {
 	backgroundColor: string;
 	/** Domains for iOS universal links + Android app links (no protocol). */
 	associatedDomains: string[];
+	/**
+	 * Extra hosts that must stay INSIDE the app instead of opening in the system
+	 * browser. Anything not on `url`'s host is treated as an external link, which
+	 * breaks flows that navigate away and come back — OAuth sign-in, hosted
+	 * checkout. List those hosts here, e.g.
+	 * `["accounts.google.com", "checkout.stripe.com", "www.acme.com"]`.
+	 */
+	allowedHosts?: string[];
 	/** Toggle native capabilities. */
 	features: WebToAppFeatures;
 	/** EAS project id (filled after `eas init`). */
