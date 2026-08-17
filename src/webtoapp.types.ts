@@ -34,7 +34,7 @@ export type ClientConfig = {
 	 * insets (66% adaptive safe zone, 50% splash) that must not be overridden.
 	 */
 	iconScale?: number;
-	/** Brand accent colour (loaders, pull-to-refresh spinner). */
+	/** Brand accent colour (loading spinner, error-screen button, Android notification tint). */
 	primaryColor: string;
 	/** App background / splash colour. */
 	backgroundColor: string;

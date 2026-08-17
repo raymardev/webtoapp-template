@@ -20,11 +20,7 @@
   },
   "submit": {
     "production": {
-      "ios": {
-        "appleId": "REPLACE_WITH_APPLE_ID_EMAIL",
-        "ascAppId": "REPLACE_WITH_APP_STORE_CONNECT_APP_ID",
-        "appleTeamId": "REPLACE_WITH_APPLE_TEAM_ID"
-      },
+      "//": "iOS: no appleId/ascAppId/appleTeamId here on purpose — eas submit prompts for them and remembers them. Add them only to automate CI. Find appleTeamId in Apple Developer > Membership (it is also the prefix in the AASA appIDs).",
       "android": {
         "serviceAccountKeyPath": "./google-service-account.json",
         "track": "internal"

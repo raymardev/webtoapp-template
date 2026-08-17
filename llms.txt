@@ -33,7 +33,7 @@ app past Apple 4.2 (push, deep links, share).
 ## Tooling
 
 - [scripts/validate.js](./scripts/validate.js): `npm run validate` — config checks, the Apple 4.2 gate (exits 1 on a bare WebView), and asset-size checks.
-- [scripts/generate-assets.mjs](./scripts/generate-assets.mjs): `npm run assets` — generates icon, adaptive icon, splash and favicon from one source logo.
+- [scripts/generate-assets.mjs](./scripts/generate-assets.mjs): `npm run assets` — generates icon, adaptive icon, splash, Android notification icon and favicon from one source logo.
 
 ## Build & ship
 

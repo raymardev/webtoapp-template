@@ -156,13 +156,12 @@ export default function WebViewScreen() {
 		const { url, isTopFrame } = request;
 		if (isTopFrame === false) return true;
 		if (url.startsWith("http://") || url.startsWith("https://")) {
-			let host: string;
 			try {
-				host = new URL(url).host;
+				new URL(url);
 			} catch {
 				return true; // unparseable — leave it to the WebView rather than eject it
 			}
-			if (host !== BASE_HOST && !config.allowedHosts.includes(host)) {
+			if (!isInternal(url)) {
 				// `isTopFrame` is an iOS-only field — on Android this callback also fires
 				// for subframes with no way to tell them apart, so ejecting cross-host
 				// requests there would throw payment and captcha iframes out to the

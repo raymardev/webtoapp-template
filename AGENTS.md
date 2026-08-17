@@ -123,12 +123,14 @@ Available on `window.WebToAppBridge` before the page's own scripts run; a
 |------|--------|
 | `WebToAppBridge.share({ title, message, url })` | Native share sheet (needs `features.share`) |
 | `WebToAppBridge.setBadge(n)` | App icon badge count |
-| `WebToAppBridge.ready()` | Tells native the web app booted |
+| `WebToAppBridge.ready()` | Posts a boot signal. Currently a **no-op** reserved hook — the loader is cleared by page load, not by this |
 | `WebToAppBridge.pushToken` | Expo push token, once registered |
 | `window.addEventListener("WebToAppPushToken", e => e.detail)` | Same token, as it arrives |
 
 Send a push with `data: { url: "https://app.acme.com/orders/42" }` and tapping it opens that
-route in the WebView. None of this is required — the web app works untouched without it.
+route in the WebView. A relative `"/orders/42"` works too. The URL is **pinned to `url`'s
+origin** — a push pointing anywhere else is ignored, and `allowedHosts` does **not** widen
+this. None of this is required — the web app works untouched without it.
 
 ---
 

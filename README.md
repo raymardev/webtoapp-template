@@ -17,10 +17,11 @@ You built a great web app. The stores want a *native* one — and Apple **reject
 
 ```bash
 1. npx degit raymardev/webtoapp-template my-app   # fresh copy
-2. edit client.config.js                          # name, bundleId, url, color, domains  ← the only file
-3. drop your logo at assets/logo.png → npm run assets   # generates every icon + splash
-4. npm run validate                               # config + Apple 4.2 gate + asset standards
-5. eas init && eas build && eas submit            # build & ship (your Apple/Google accounts)
+2. cd my-app && npm install                       # Node 22.13+
+3. edit client.config.js                          # name, bundleId, url, color, domains  ← the only file
+4. drop your logo at assets/logo.png → npm run assets   # generates every icon + splash
+5. npm run validate                               # config + Apple 4.2 gate + asset standards
+6. eas init && eas build && eas submit            # build & ship (your Apple/Google accounts)
 ```
 
 `client.config.js` is the **only** file you edit.
