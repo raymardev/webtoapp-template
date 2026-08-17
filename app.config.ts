@@ -26,6 +26,12 @@ const config: ExpoConfig = {
 		bundleIdentifier: client.bundleId,
 		supportsTablet: true,
 		associatedDomains: client.associatedDomains.map((d) => `applinks:${d}`),
+		infoPlist: {
+			// A WebView wrapper only uses HTTPS/standard crypto, so this is exempt.
+			// Declaring it here answers App Store Connect's export-compliance question
+			// automatically instead of once per submission.
+			ITSAppUsesNonExemptEncryption: false,
+		},
 	},
 	android: {
 		package: client.bundleId,
@@ -53,7 +59,16 @@ const config: ExpoConfig = {
 				backgroundColor: client.backgroundColor,
 			},
 		],
-		"expo-notifications",
+		[
+			"expo-notifications",
+			{
+				// Android draws the status-bar notification icon as a silhouette. Without
+				// a dedicated white-on-transparent icon it falls back to the app icon and
+				// usually renders as a featureless white square.
+				icon: "./assets/notification-icon.png",
+				color: client.primaryColor,
+			},
+		],
 	],
 	extra: {
 		url: client.url,

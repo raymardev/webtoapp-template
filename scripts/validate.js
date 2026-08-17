@@ -157,6 +157,86 @@ function pngSize(file) {
 	return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
 }
 
+/**
+ * How solidly filled the visible part of an 8-bit RGBA PNG is: the fraction of its
+ * alpha bounding box that is non-transparent. ~1 means the artwork is a featureless
+ * rectangle. Measuring the bounding box rather than the whole canvas makes this
+ * independent of however much transparent padding surrounds the logo.
+ *
+ * Returns null if the file isn't a form we can read (interlaced, palette, 16-bit —
+ * none of which we generate). Hand-rolled so this script stays dependency-free.
+ */
+function opaqueRatio(file) {
+	try {
+		const buf = fs.readFileSync(file);
+		if (buf.readUInt32BE(0) !== 0x89504e47) return null;
+
+		let pos = 8;
+		let width = 0, height = 0, bitDepth = 0, colorType = -1, interlace = 0;
+		const idat = [];
+		while (pos + 8 <= buf.length) {
+			const len = buf.readUInt32BE(pos);
+			const type = buf.toString("ascii", pos + 4, pos + 8);
+			const data = buf.subarray(pos + 8, pos + 8 + len);
+			if (type === "IHDR") {
+				width = data.readUInt32BE(0);
+				height = data.readUInt32BE(4);
+				bitDepth = data[8];
+				colorType = data[9];
+				interlace = data[12];
+			} else if (type === "IDAT") idat.push(data);
+			else if (type === "IEND") break;
+			pos += 12 + len;
+		}
+		// Only the plain 8-bit RGBA, non-interlaced form we produce.
+		if (colorType !== 6 || bitDepth !== 8 || interlace !== 0 || !width || !height) return null;
+
+		const raw = require("node:zlib").inflateSync(Buffer.concat(idat));
+		const bpp = 4;
+		const stride = width * bpp;
+		const out = Buffer.alloc(height * stride);
+
+		// Undo the per-scanline PNG filters (spec 9.2).
+		for (let y = 0; y < height; y++) {
+			const filter = raw[y * (stride + 1)];
+			const src = raw.subarray(y * (stride + 1) + 1, y * (stride + 1) + 1 + stride);
+			const cur = out.subarray(y * stride, y * stride + stride);
+			const prior = y > 0 ? out.subarray((y - 1) * stride, (y - 1) * stride + stride) : null;
+			for (let x = 0; x < stride; x++) {
+				const a = x >= bpp ? cur[x - bpp] : 0;
+				const b = prior ? prior[x] : 0;
+				const c = prior && x >= bpp ? prior[x - bpp] : 0;
+				let v = src[x];
+				if (filter === 1) v += a;
+				else if (filter === 2) v += b;
+				else if (filter === 3) v += (a + b) >> 1;
+				else if (filter === 4) {
+					const p = a + b - c;
+					const pa = Math.abs(p - a), pb = Math.abs(p - b), pc = Math.abs(p - c);
+					v += pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
+				} else if (filter !== 0) return null;
+				cur[x] = v & 0xff;
+			}
+		}
+
+		let opaque = 0, minX = width, minY = height, maxX = -1, maxY = -1;
+		for (let y = 0; y < height; y++) {
+			for (let x = 0; x < width; x++) {
+				if (out[y * stride + x * bpp + 3] <= 16) continue;
+				opaque++;
+				if (x < minX) minX = x;
+				if (x > maxX) maxX = x;
+				if (y < minY) minY = y;
+				if (y > maxY) maxY = y;
+			}
+		}
+		if (maxX < 0) return 0; // fully transparent
+		return opaque / ((maxX - minX + 1) * (maxY - minY + 1));
+	} catch {
+		return null;
+	}
+}
+
 const checkAsset = (rel, { square1024 = false } = {}) => {
 	const p = path.join(ROOT, rel);
 	if (!fs.existsSync(p)) { err(`missing ${rel} — run \`npm run assets\``); return; }
@@ -172,7 +252,21 @@ const checkAsset = (rel, { square1024 = false } = {}) => {
 checkAsset("assets/icon.png", { square1024: true });
 checkAsset("assets/adaptive-icon.png", { square1024: true });
 checkAsset("assets/splash-icon.png");
+checkAsset("assets/notification-icon.png");
 checkAsset("assets/favicon.png");
+
+// Android paints the notification icon from its alpha channel alone, so a fully
+// opaque one renders as a blank white square on every notification. Catch that here
+// rather than after the first push lands in front of real users.
+const notifPath = path.join(ROOT, "assets/notification-icon.png");
+if (fs.existsSync(notifPath)) {
+	const ratio = opaqueRatio(notifPath);
+	if (ratio !== null && ratio > 0.95) {
+		warn(
+			"assets/notification-icon.png is fully opaque — Android will show a blank white square on every notification. Use a logo with a transparent background, or hand-draw a white-on-transparent 96×96.",
+		);
+	}
+}
 
 // --- report ---
 const C = { green: "\x1b[32m", yellow: "\x1b[33m", red: "\x1b[31m", reset: "\x1b[0m" };
