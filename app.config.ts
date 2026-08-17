@@ -44,6 +44,10 @@ const config: ExpoConfig = {
 	},
 	android: {
 		package: client.bundleId,
+		// Firebase credentials for push. Omitted when unset so a no-push app still builds.
+		...(client.androidGoogleServicesFile
+			? { googleServicesFile: client.androidGoogleServicesFile }
+			: {}),
 		adaptiveIcon: {
 			foregroundImage: "./assets/adaptive-icon.png",
 			backgroundColor: client.backgroundColor,

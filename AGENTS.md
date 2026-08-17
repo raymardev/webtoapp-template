@@ -68,6 +68,7 @@ see [`docs/ONBOARDING.md`](./docs/ONBOARDING.md).
 | `features.share` | boolean | Native share via `window.WebToAppBridge`. | `true` |
 | `features.pullToRefresh` | boolean | Pull down to reload. **iOS only** — no-op on Android. | `true` |
 | `features.ota` | boolean? | **Pro/Autopilot:** over-the-air JS updates (expo-updates). Needs `eas.projectId`. Off by default. | `true` |
+| `androidGoogleServicesFile` | string? | Path to Firebase `google-services.json`. **Required for Android push** (iOS doesn't need it). | `"./google-services.json"` |
 | `eas.projectId` | string | Filled after `eas init`. Required for push to work. | `"..."` |
 
 Validate your work after editing — run, in order:
@@ -104,7 +105,7 @@ gets approval **without touching the founder's web app**:
 
 - Native push (`src/native/push.ts`), deep/universal links (`src/native/linking.ts`),
   native share + a `window.WebToAppBridge` (`src/native/bridge.ts`)
-- Robust WebView: loading, error-with-retry, offline screen, pull-to-refresh, safe areas,
+- Robust WebView: loading, error-with-retry, offline screen, pull-to-refresh (iOS), safe areas,
   Android hardware back, external links open in the system browser (`src/WebViewScreen.tsx`)
 
 If you remove these to "keep it simple," you reintroduce the 4.2 rejection. Keep push + at

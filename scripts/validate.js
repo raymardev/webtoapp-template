@@ -151,6 +151,21 @@ const projectId = config.eas && config.eas.projectId;
 if (f.push === true && !isStr(projectId)) {
 	warn("features.push is on but eas.projectId is empty — run `eas init` and paste the projectId, or push won't work");
 }
+// Android push needs Firebase credentials; EAS-side credentials aren't visible here,
+// so warn rather than block.
+if (f.push === true) {
+	const gsf = config.androidGoogleServicesFile;
+	if (!isStr(gsf)) {
+		warn(
+			"features.push is on but androidGoogleServicesFile is not set — Android push needs Firebase. Create a Firebase project for this bundleId, download google-services.json, and point androidGoogleServicesFile at it. (iOS push works without this.)",
+		);
+	} else if (!fs.existsSync(path.join(ROOT, gsf))) {
+		err(`androidGoogleServicesFile points at a file that does not exist: ${gsf}`);
+	} else {
+		ok(`android push credentials: ${gsf}`);
+	}
+}
+
 // OTA silently produces no `updates` config without a projectId — fail loudly instead.
 if (f.ota === true && !isStr(projectId)) {
 	err("features.ota is on but eas.projectId is empty — OTA updates would be silently disabled. Run `eas init` and paste the projectId.");

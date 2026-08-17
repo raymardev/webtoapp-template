@@ -16,10 +16,25 @@ export default function App() {
 
 	useEffect(() => {
 		let active = true;
+		let offlineTimer: ReturnType<typeof setTimeout> | null = null;
+
+		const clearOfflineTimer = () => {
+			if (offlineTimer) clearTimeout(offlineTimer);
+			offlineTimer = null;
+		};
+
+		// Going offline is debounced so a momentary blip never covers the app; coming
+		// back online is applied immediately.
+		const apply = (isOnline: boolean) => {
+			if (!active) return;
+			clearOfflineTimer();
+			if (isOnline) setOnline(true);
+			else offlineTimer = setTimeout(() => active && setOnline(false), 2000);
+		};
 
 		const unsubscribe = NetInfo.addEventListener((state) => {
 			// `isInternetReachable` is null until probed — only trust an explicit false.
-			setOnline(state.isConnected !== false);
+			apply(state.isConnected !== false);
 		});
 
 		// Never leave the splash up on a failed probe: reveal the app either way and
@@ -40,6 +55,7 @@ export default function App() {
 
 		return () => {
 			active = false;
+			clearOfflineTimer();
 			unsubscribe();
 		};
 	}, []);
@@ -59,7 +75,11 @@ export default function App() {
 				style={[styles.safe, { backgroundColor: config.backgroundColor }]}
 				edges={["top", "bottom"]}
 			>
-				{online ? <WebViewScreen /> : <OfflineScreen onRetry={retry} />}
+				{/* The WebView stays mounted and OfflineScreen covers it — unmounting would
+				    throw away the page, scroll position and any half-filled form, which is
+				    the opposite of what the offline screen promises the user. */}
+				<WebViewScreen />
+				{!online && <OfflineScreen onRetry={retry} />}
 			</SafeAreaView>
 		</SafeAreaProvider>
 	);

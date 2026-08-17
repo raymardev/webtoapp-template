@@ -45,6 +45,12 @@ export type ClientConfig = {
 	allowedHosts?: string[];
 	/** Toggle native capabilities. */
 	features: WebToAppFeatures;
+	/**
+	 * Path to the Firebase `google-services.json` for this app. **Required for
+	 * Android push** — without it the Android build has no FCM credentials and
+	 * `getExpoPushTokenAsync` fails. Not needed if `features.push` is off.
+	 */
+	androidGoogleServicesFile?: string;
 	/** EAS project id (filled after `eas init`). */
 	eas?: { projectId?: string };
 };

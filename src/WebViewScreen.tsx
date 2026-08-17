@@ -56,18 +56,29 @@ export default function WebViewScreen() {
 
 	// Deep / universal links → navigate the WebView.
 	const navigateTo = useCallback((url: string) => {
-		setErrored(false);
 		setLoading(true);
-		// Re-opening the URL already in state changes nothing, so no load would start
-		// and the spinner would never clear. Reload imperatively instead.
 		if (uriRef.current === url) {
-			webRef.current?.reload();
-			return;
+			// `source` already holds this URL, so setting it again starts no load and the
+			// spinner would hang. The user may also have browsed elsewhere since, so a
+			// plain reload() would refresh the wrong page — navigate explicitly. When the
+			// WebView is unmounted (errored) this no-ops and clearing the error below
+			// remounts it already pointed at this URL.
+			webRef.current?.injectJavaScript(`location.href = ${JSON.stringify(url)}; true;`);
+		} else {
+			uriRef.current = url;
+			setUri(url);
 		}
-		uriRef.current = url;
-		setUri(url);
+		setErrored(false);
 	}, []);
 	useDeepLink(navigateTo);
+
+	// Backstop: never let the loading overlay become permanent if a load we expected
+	// never actually starts or never reports back.
+	useEffect(() => {
+		if (!loading) return;
+		const timer = setTimeout(() => setLoading(false), 20000);
+		return () => clearTimeout(timer);
+	}, [loading]);
 
 	// Tapping a push notification with a `data.url` → open that route.
 	useEffect(() => {
@@ -118,6 +129,14 @@ export default function WebViewScreen() {
 	}, []);
 
 	const onMessage = useCallback((event: WebViewMessageEvent) => {
+		// On Android the postMessage bridge is exposed to every frame, so a third-party
+		// iframe could trigger native actions. Best-effort origin check — iOS already
+		// installs the bridge for the main frame only.
+		try {
+			if (new URL(event.nativeEvent.url).host !== BASE_HOST) return;
+		} catch {
+			return;
+		}
 		const msg = parseBridgeMessage(event.nativeEvent.data);
 		if (!msg) return;
 		if (msg.type === "share" && config.features.share) {
@@ -125,7 +144,8 @@ export default function WebViewScreen() {
 			Share.share({ message: p.message ?? p.url ?? "", title: p.title, url: p.url }).catch(() => {});
 		} else if (msg.type === "setBadge") {
 			const p = msg.payload as { count?: number };
-			Notifications.setBadgeCountAsync(p.count ?? 0).catch(() => {});
+			const count = typeof p.count === "number" && Number.isFinite(p.count) ? p.count : 0;
+			Notifications.setBadgeCountAsync(Math.max(0, Math.trunc(count))).catch(() => {});
 		}
 	}, []);
 
@@ -143,6 +163,12 @@ export default function WebViewScreen() {
 				return true; // unparseable — leave it to the WebView rather than eject it
 			}
 			if (host !== BASE_HOST && !config.allowedHosts.includes(host)) {
+				// `isTopFrame` is an iOS-only field — on Android this callback also fires
+				// for subframes with no way to tell them apart, so ejecting cross-host
+				// requests there would throw payment and captcha iframes out to the
+				// browser. Let them load in place; real external link taps still reach
+				// the system browser through onOpenWindow.
+				if (Platform.OS === "android") return true;
 				Linking.openURL(url).catch(() => {});
 				return false;
 			}

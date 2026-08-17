@@ -59,6 +59,13 @@ eas init                 # creates the project, prints the projectId
 
 - [ ] Paste the `projectId` into `client.config.js` → `eas.projectId` (needed for push)
 
+**Android push also needs Firebase** (iOS does not). Skip this only if `features.push` is off:
+
+- [ ] Create a Firebase project, add an **Android app** whose package name is exactly your `bundleId`
+- [ ] Download `google-services.json`, put it in the repo, and set `androidGoogleServicesFile: "./google-services.json"` in `client.config.js`
+- [ ] Upload the **FCM V1 service account key** to EAS: `eas credentials` → Android → push notifications
+- [ ] The file holds credentials and is gitignored by default — keep it that way
+
 ## 5. Universal links (if enabled)
 
 - [ ] iOS: host `/.well-known/apple-app-site-association` on the client's domain
@@ -74,7 +81,7 @@ eas build --profile preview --platform all     # internal test build
 
 - [ ] Install on a **real device** (push tokens never work on a simulator), verify: loads,
       push prompt appears, offline screen, Android back button, external links open in the
-      browser, `target="_blank"` links work, pull-to-refresh
+      browser, `target="_blank"` links work, pull-to-refresh (iOS only)
 
 ## 7. Submit to the stores
 
@@ -98,7 +105,8 @@ eas submit --profile production --platform android
 | Symptom | Fix |
 |---------|-----|
 | Apple 4.2 rejection | Ensure push + at least one native feature are enabled and actually used |
-| Push token is null | Set `eas.projectId`; test on a **real device** (not simulator) |
+| Push token is null (iOS) | Set `eas.projectId`; test on a **real device** (not simulator) |
+| Push token is null (Android) | Usually missing Firebase: set `androidGoogleServicesFile` and upload the FCM V1 key via `eas credentials` (step 4) |
 | Universal links don't open | Check the `.well-known` files are served with `Content-Type: application/json` and no redirect |
 | White screen | Verify `url` is reachable over HTTPS and not blocked by CSP/`X-Frame-Options` |
 | No push prompt on Android 13+ | A notification channel must exist before the prompt shows — the template creates it first; check `features.push` is on |
