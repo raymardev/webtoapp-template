@@ -1,7 +1,7 @@
 # WebToApp Kit — turn your web app into a native app that passes Apple review
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-22c55e.svg)](./LICENSE)
-[![Expo SDK 56](https://img.shields.io/badge/Expo-SDK%2056-000.svg?logo=expo)](https://docs.expo.dev/versions/v56.0.0/)
+[![Expo SDK 57](https://img.shields.io/badge/Expo-SDK%2057-000.svg?logo=expo)](https://docs.expo.dev/versions/v57.0.0/)
 [![Passes Apple 4.2](https://img.shields.io/badge/Apple-built%20to%20pass%204.2-0a84ff.svg?logo=apple)](#why-apple-rejects-web-wrappers--and-how-this-passes)
 
 > Wrap your **web app or PWA** into a native **iOS + Android** app — by editing **one file**.

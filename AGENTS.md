@@ -11,9 +11,9 @@ Read this whole file before doing anything. Then follow "The whole job" below.
 
 ## 🚨 Non-negotiable rules
 
-1. **Use the versioned Expo docs.** This template targets **Expo SDK 56 / React Native 0.85**.
+1. **Use the versioned Expo docs.** This template targets **Expo SDK 57 / React Native 0.86**.
    Before writing or changing any native/Expo code, read the exact versioned docs at
-   <https://docs.expo.dev/versions/v56.0.0/>. APIs differ between SDKs — do not rely on memory.
+   <https://docs.expo.dev/versions/v57.0.0/>. APIs differ between SDKs — do not rely on memory.
 2. **Edit `client.config.js` only.** That is THE per-client file. Do **not** modify `src/`,
    `app.config.ts`, or `eas.json` to make a normal app work — everything is driven by config.
    Touch `src/` only when explicitly extending the template itself.
