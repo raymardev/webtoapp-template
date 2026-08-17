@@ -87,9 +87,21 @@ walks you through the build. The full conversational autopilot (the `ship-my-app
 Your web app can opt into native features — no native code:
 
 ```js
+// Native share sheet
 window.WebToAppBridge?.share({ title: "Acme", message: "Check this", url: location.href });
-window.addEventListener("ShipPushToken", (e) => console.log("push token", e.detail));
+
+// App icon badge
+window.WebToAppBridge?.setBadge(3);
+
+// The Expo push token, once the device has registered
+window.addEventListener("WebToAppPushToken", (e) => console.log("push token", e.detail));
+// …or read it later, if you subscribed after it arrived:
+const token = window.WebToAppBridge?.pushToken;
 ```
+
+The bridge is defined before your page scripts run, and fires a `WebToAppBridgeReady` event.
+Send a push with `data: { url: "https://app.acme.com/orders/42" }` and tapping the notification
+opens that route.
 
 ## Structure
 

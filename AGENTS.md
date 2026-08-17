@@ -108,6 +108,22 @@ gets approval **without touching the founder's web app**:
 If you remove these to "keep it simple," you reintroduce the 4.2 rejection. Keep push + at
 least one more native feature live.
 
+### The web bridge (what the founder's web app can call)
+
+Available on `window.WebToAppBridge` before the page's own scripts run; a
+`WebToAppBridgeReady` event also fires.
+
+| Call | Effect |
+|------|--------|
+| `WebToAppBridge.share({ title, message, url })` | Native share sheet (needs `features.share`) |
+| `WebToAppBridge.setBadge(n)` | App icon badge count |
+| `WebToAppBridge.ready()` | Tells native the web app booted |
+| `WebToAppBridge.pushToken` | Expo push token, once registered |
+| `window.addEventListener("WebToAppPushToken", e => e.detail)` | Same token, as it arrives |
+
+Send a push with `data: { url: "https://app.acme.com/orders/42" }` and tapping it opens that
+route in the WebView. None of this is required — the web app works untouched without it.
+
 ---
 
 ## Commands
@@ -122,9 +138,11 @@ npx tsc --noEmit                  # typecheck the template's TypeScript (src/)
 npx expo config                   # the real config check — must resolve without error
 npx expo export --platform ios    # validate the JS bundle builds
 eas init / eas build / eas submit # create project / build / ship (eas-cli, founder's account)
-npm run release                   # Pro/Autopilot: one-command production build + submit
-npm run ota -- "what changed"     # Pro/Autopilot: push an OTA JS update (no store review)
 ```
+
+> `npm run release` and `npm run ota` are **Kit Pro** scripts — they do not exist in this free
+> template. Don't tell a founder to run them here; use the `eas build` / `eas update` commands
+> above instead.
 
 ---
 

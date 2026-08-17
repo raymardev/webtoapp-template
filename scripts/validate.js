@@ -38,9 +38,10 @@ const SCHEME = /^[a-z][a-z0-9+.-]*$/;
 
 // Template defaults — present means "not configured yet for this client".
 const DEFAULTS = {
-	name: "Ship Demo",
-	slug: "ship-demo",
-	bundleId: "com.shiptostores.demo",
+	name: "WebToApp Demo",
+	slug: "webtoapp-demo",
+	bundleId: "com.webtoapp.demo",
+	scheme: "webtoappdemo",
 	url: "https://docs.expo.dev",
 };
 
@@ -64,6 +65,7 @@ else ok(`bundleId: ${config.bundleId}`);
 // --- scheme ---
 if (!isStr(config.scheme)) err("scheme is required");
 else if (!SCHEME.test(config.scheme)) err(`scheme must be a URL scheme (lowercase, no spaces/colon), got "${config.scheme}"`);
+else if (config.scheme === DEFAULTS.scheme) warn(`scheme is still the template default ("${DEFAULTS.scheme}")`);
 else ok(`scheme: ${config.scheme}://`);
 
 // --- url ---
@@ -104,10 +106,29 @@ for (const key of ["push", "share", "pullToRefresh"]) {
 	if (typeof f[key] !== "boolean") err(`features.${key} must be true or false`);
 }
 
+// --- optional features ---
+if (f.ota !== undefined && typeof f.ota !== "boolean") err("features.ota must be true or false when set");
+
+// --- logo / iconScale ---
+if (config.logo !== undefined && !isStr(config.logo)) err("logo must be a path string when set");
+if (config.iconScale !== undefined) {
+	if (typeof config.iconScale !== "number" || Number.isNaN(config.iconScale)) {
+		err(`iconScale must be a number (got ${typeof config.iconScale})`);
+	} else if (config.iconScale <= 0 || config.iconScale > 1) {
+		err(`iconScale must be between 0 and 1 (got ${config.iconScale})`);
+	} else {
+		ok(`iconScale: ${config.iconScale}`);
+	}
+}
+
 // --- eas.projectId (needed for push) ---
 const projectId = config.eas && config.eas.projectId;
 if (f.push === true && !isStr(projectId)) {
 	warn("features.push is on but eas.projectId is empty — run `eas init` and paste the projectId, or push won't work");
+}
+// OTA silently produces no `updates` config without a projectId — fail loudly instead.
+if (f.ota === true && !isStr(projectId)) {
+	err("features.ota is on but eas.projectId is empty — OTA updates would be silently disabled. Run `eas init` and paste the projectId.");
 }
 
 // --- Apple Guideline 4.2 readiness ---

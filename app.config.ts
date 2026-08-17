@@ -2,8 +2,8 @@ import type { ExpoConfig } from "expo/config";
 import client from "./client.config";
 
 /**
- * Generates the full Expo config from client.config.ts.
- * You normally never touch this file — edit client.config.ts instead.
+ * Generates the full Expo config from client.config.js.
+ * You normally never touch this file — edit client.config.js instead.
  */
 // Pro / Autopilot: over-the-air JS updates — only when enabled and a project id is set.
 const otaConfig: Partial<ExpoConfig> =
@@ -56,7 +56,7 @@ const config: ExpoConfig = {
 		"expo-notifications",
 	],
 	extra: {
-		shipUrl: client.url,
+		url: client.url,
 		primaryColor: client.primaryColor,
 		backgroundColor: client.backgroundColor,
 		features: client.features,

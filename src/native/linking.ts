@@ -6,14 +6,20 @@ import { config } from "../theme";
 function toWebUrl(incoming: string): string | null {
 	try {
 		const parsed = Linking.parse(incoming);
-		if (!parsed.path) return null;
 		const base = config.url.replace(/\/$/, "");
-		const query = parsed.queryParams
-			? Object.entries(parsed.queryParams)
-					.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
-					.join("&")
-			: "";
-		return `${base}/${parsed.path}${query ? `?${query}` : ""}`;
+		// A bare `acme://` or a link to the domain root has no path — that's the home
+		// route, not an unmappable link, so don't drop it.
+		const path = parsed.path ? `/${parsed.path.replace(/^\//, "")}` : "";
+		const params: string[] = [];
+		for (const [k, v] of Object.entries(parsed.queryParams ?? {})) {
+			if (v == null) continue;
+			// A repeated key parses to an array — preserve every value.
+			for (const one of Array.isArray(v) ? v : [v]) {
+				params.push(`${encodeURIComponent(k)}=${encodeURIComponent(String(one))}`);
+			}
+		}
+		const query = params.join("&");
+		return `${base}${path}${query ? `?${query}` : ""}`;
 	} catch {
 		return null;
 	}

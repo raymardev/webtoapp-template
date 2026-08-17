@@ -30,6 +30,11 @@ app past Apple 4.2 (push, deep links, share).
 - [src/native/bridge.ts](./src/native/bridge.ts): `window.WebToAppBridge` — native share + web↔native messaging.
 - [src/OfflineScreen.tsx](./src/OfflineScreen.tsx): Offline screen with auto-retry.
 
+## Tooling
+
+- [scripts/validate.js](./scripts/validate.js): `npm run validate` — config checks, the Apple 4.2 gate (exits 1 on a bare WebView), and asset-size checks.
+- [scripts/generate-assets.mjs](./scripts/generate-assets.mjs): `npm run assets` — generates icon, adaptive icon, splash and favicon from one source logo.
+
 ## Build & ship
 
 - [eas.json](./eas.json): EAS build/submit profiles (development, preview, production).

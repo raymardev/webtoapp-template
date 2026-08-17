@@ -10,10 +10,10 @@
  * @type {import("./src/webtoapp.types").ClientConfig}
  */
 const config = {
-	name: "Ship Demo",
-	slug: "ship-demo",
-	bundleId: "com.shiptostores.demo",
-	scheme: "shipdemo",
+	name: "WebToApp Demo",
+	slug: "webtoapp-demo",
+	bundleId: "com.webtoapp.demo",
+	scheme: "webtoappdemo",
 	url: "https://docs.expo.dev",
 	logo: "./assets/logo.png",
 	primaryColor: "#00d08c",

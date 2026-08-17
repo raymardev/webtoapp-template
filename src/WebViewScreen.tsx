@@ -5,13 +5,16 @@ import {
 	type WebViewMessageEvent,
 	type WebViewNavigation,
 } from "react-native-webview";
+
+/** Shape of the onOpenWindow event (not re-exported from the package root). */
+type OpenWindowEvent = { nativeEvent: { targetUrl: string } };
 import * as Notifications from "expo-notifications";
 import * as Linking from "expo-linking";
 import { config } from "./theme";
 import LoadingScreen from "./components/LoadingScreen";
 import ErrorScreen from "./components/ErrorScreen";
 import { INJECTED_BRIDGE, parseBridgeMessage, pushTokenScript } from "./native/bridge";
-import { registerForPushNotifications } from "./native/push";
+import { registerForPushNotifications, subscribeToNotificationTaps } from "./native/push";
 import { useDeepLink } from "./native/linking";
 
 const BASE_HOST = (() => {
@@ -22,6 +25,15 @@ const BASE_HOST = (() => {
 	}
 })();
 
+/** Whether a URL belongs to the client's own web app (stays in the WebView). */
+function isInternal(url: string): boolean {
+	try {
+		return new URL(url).host === BASE_HOST;
+	} catch {
+		return false;
+	}
+}
+
 export default function WebViewScreen() {
 	const webRef = useRef<WebView>(null);
 	const pushTokenRef = useRef<string | null>(null);
@@ -31,11 +43,18 @@ export default function WebViewScreen() {
 	const [canGoBack, setCanGoBack] = useState(false);
 
 	// Deep / universal links → navigate the WebView.
-	const onDeepLink = useCallback((url: string) => {
+	const navigateTo = useCallback((url: string) => {
 		setErrored(false);
+		setLoading(true);
 		setUri(url);
 	}, []);
-	useDeepLink(onDeepLink);
+	useDeepLink(navigateTo);
+
+	// Tapping a push notification with a `data.url` → open that route.
+	useEffect(() => {
+		if (!config.features.push) return;
+		return subscribeToNotificationTaps(navigateTo);
+	}, [navigateTo]);
 
 	// Android hardware back → WebView history.
 	useEffect(() => {
@@ -104,6 +123,19 @@ export default function WebViewScreen() {
 		return false;
 	}, []);
 
+	// `target="_blank"` links never reach onShouldStartLoadWithRequest on Android, so
+	// without this they silently do nothing. Keep our own pages in the WebView and
+	// send everything else to the system browser.
+	const onOpenWindow = useCallback((event: OpenWindowEvent) => {
+		const url = event.nativeEvent.targetUrl;
+		if (!url) return;
+		if (isInternal(url)) {
+			navigateTo(url);
+		} else {
+			Linking.openURL(url).catch(() => {});
+		}
+	}, [navigateTo]);
+
 	const onNavStateChange = useCallback((nav: WebViewNavigation) => {
 		setCanGoBack(nav.canGoBack);
 	}, []);
@@ -113,6 +145,14 @@ export default function WebViewScreen() {
 		if (pushTokenRef.current) {
 			webRef.current?.injectJavaScript(pushTokenScript(pushTokenRef.current));
 		}
+	}, []);
+
+	// The WebView's own renderer process can be killed under memory pressure. Without
+	// handling it the user is left staring at a permanently blank screen.
+	const onProcessLost = useCallback(() => {
+		setLoading(false);
+		setErrored(true);
+		return true;
 	}, []);
 
 	if (errored) {
@@ -131,15 +171,27 @@ export default function WebViewScreen() {
 			<WebView
 				ref={webRef}
 				source={{ uri }}
+				// Defined before page scripts run, so the web app can use the bridge
+				// immediately; re-injected after load as a safety net (it is idempotent).
+				injectedJavaScriptBeforeContentLoaded={INJECTED_BRIDGE}
 				injectedJavaScript={INJECTED_BRIDGE}
 				onMessage={onMessage}
 				onNavigationStateChange={onNavStateChange}
 				onShouldStartLoadWithRequest={onShouldStart}
+				onOpenWindow={onOpenWindow}
 				onLoadEnd={onLoadEnd}
 				onError={() => setErrored(true)}
+				onRenderProcessGone={onProcessLost}
+				onContentProcessDidTerminate={onProcessLost}
 				pullToRefreshEnabled={config.features.pullToRefresh}
 				allowsBackForwardNavigationGestures
 				startInLoadingState={false}
+				// Video plays inline instead of hijacking the screen in a native player.
+				allowsInlineMediaPlayback
+				mediaPlaybackRequiresUserAction={false}
+				// Let the web app use getUserMedia (camera/mic) without a second prompt
+				// on iOS once the OS-level permission has been granted.
+				mediaCapturePermissionGrantType="grantIfSameHostElsePrompt"
 				style={{ backgroundColor: config.backgroundColor }}
 			/>
 			{loading && <LoadingScreen />}
