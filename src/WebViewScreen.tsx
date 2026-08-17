@@ -237,6 +237,16 @@ export default function WebViewScreen() {
 				onOpenWindow={onOpenWindow}
 				onLoadEnd={onLoadEnd}
 				onError={() => setErrored(true)}
+				// Only server-side failures on the page actually being shown. Many web apps
+				// serve their own branded 404, and replacing that with a generic error
+				// screen would be worse than showing it.
+				onHttpError={(e) => {
+					const { statusCode, url: failed } = e.nativeEvent;
+					if (statusCode >= 500 && failed === currentUrlRef.current) {
+						setLoading(false);
+						setErrored(true);
+					}
+				}}
 				onRenderProcessGone={onProcessLost}
 				onContentProcessDidTerminate={onProcessLost}
 				pullToRefreshEnabled={config.features.pullToRefresh}

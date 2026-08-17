@@ -61,7 +61,9 @@ else ok(`slug: ${config.slug}`);
 // --- bundleId (immutable after first submit) ---
 if (!isStr(config.bundleId)) err("bundleId is required");
 else if (!BUNDLE.test(config.bundleId)) err(`bundleId must be reverse-DNS like com.acme.app — letters and digits only per segment, no hyphens or underscores (Android rejects them) (got "${config.bundleId}")`);
-else if (config.bundleId === DEFAULTS.bundleId) warn(`bundleId is still the template default ("${DEFAULTS.bundleId}") — it is IMMUTABLE after first submit, set it now`);
+// Blocking, not advisory: the bundleId is immutable after the first submit, so
+// shipping the template default is unrecoverable.
+else if (config.bundleId === DEFAULTS.bundleId) err(`bundleId is still the template default ("${DEFAULTS.bundleId}") — it is IMMUTABLE after first submit, set it before building`);
 else ok(`bundleId: ${config.bundleId}`);
 
 // --- scheme ---
@@ -78,7 +80,8 @@ if (!isStr(config.url)) {
 	try { u = new URL(config.url); } catch { /* invalid */ }
 	if (!u) err(`url is not a valid URL (got "${config.url}")`);
 	else if (u.protocol !== "https:") err(`url must be https:// (got "${u.protocol}//")`);
-	else if (config.url === DEFAULTS.url || u.host === "docs.expo.dev") warn(`url is still the template default ("${DEFAULTS.url}")`);
+	// Blocking: building this would ship an app that loads the Expo docs.
+	else if (config.url === DEFAULTS.url || u.host === "docs.expo.dev") err(`url is still the template default ("${DEFAULTS.url}") — point it at the client's web app before building`);
 	else ok(`url: ${config.url}`);
 }
 

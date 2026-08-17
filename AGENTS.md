@@ -58,7 +58,7 @@ see [`docs/ONBOARDING.md`](./docs/ONBOARDING.md).
 | `scheme` | string | Deep-link scheme, one word. | `"acme"` → `acme://` |
 | `url` | string | The web app the wrapper loads. Must be HTTPS and not block framing. | `"https://app.acme.com"` |
 | `logo` | string | Source logo for `npm run assets` (square PNG, 1024×1024). Default `./assets/logo.png`. | `"./assets/logo.png"` |
-| `iconScale` | number? | Icon fill: `1` = full-bleed (a finished/square logo), `~0.8` = padded on bg (a bare symbol). Default `0.8`. | `1` |
+| `iconScale` | number? | Fill for the **base icon** only: `1` = full-bleed (a finished/square logo), `~0.8` = padded on bg (a bare symbol). Default `0.8`. The Android adaptive icon (66% safe zone) and splash mark (50%) keep fixed insets. | `1` |
 | `primaryColor` | string | Brand accent (loading spinner, error-screen button). | `"#00d08c"` |
 | `backgroundColor` | string | Splash / app background. | `"#0b1020"` |
 | `associatedDomains` | string[] | Domains for iOS universal links + Android app links. **No protocol.** Empty `[]` if not using links. | `["app.acme.com"]` |
@@ -74,12 +74,15 @@ see [`docs/ONBOARDING.md`](./docs/ONBOARDING.md).
 Validate your work after editing — run, in order:
 
 - **`npm run validate`** — WebToApp Kit pre-flight: checks every config field and runs the Apple
-  4.2 readiness gate. It **fails (exit 1) on a bare WebView** with no native features. This is
-  your go/no-go before building.
+  4.2 readiness gate. It **fails (exit 1) on a bare WebView** with no native features, and also
+  while `bundleId` or `url` are still the template defaults — a freshly cloned repo is expected
+  to fail this until you configure it. This is your go/no-go before building.
 - **`npx expo config`** — confirms the config resolves into a valid Expo config (bundle id,
   plugins, `extra`).
-- `npx tsc --noEmit` typechecks the template's TypeScript in `src/`. (The JSDoc `@type` in
-  `client.config.js` gives editor autocomplete/errors; `tsc` does not check the `.js` config.)
+- `npx tsc --noEmit` typechecks `src/` **and** `client.config.js` — the file's `// @ts-check`
+  plus its JSDoc `@type {ClientConfig}` check every field against the schema, including
+  misspelled keys (`iconScael` is reported as an unknown property).
+- `npm run doctor` (`expo-doctor`) — dependency/config sanity against the installed SDK.
 
 ---
 

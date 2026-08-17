@@ -27,7 +27,12 @@ export type ClientConfig = {
 	version?: string;
 	/** Source logo for `npm run assets` (square PNG, 1024×1024 recommended). */
 	logo?: string;
-	/** Icon fill: 1 = full-bleed (finished/square logo), ~0.8 = padded on bg (bare symbol). Default 0.8. */
+	/**
+	 * Fill for the **base icon** (`icon.png`, used by iOS and as the Android fallback):
+	 * 1 = full-bleed (finished/square logo), ~0.8 = padded on bg (bare symbol). Default 0.8.
+	 * Does not affect the Android adaptive icon or the splash mark, which keep fixed
+	 * insets (66% adaptive safe zone, 50% splash) that must not be overridden.
+	 */
 	iconScale?: number;
 	/** Brand accent colour (loaders, pull-to-refresh spinner). */
 	primaryColor: string;

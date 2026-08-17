@@ -36,7 +36,7 @@ Edit the single config file:
 | `associatedDomains` | `["app.acme.com"]` | universal links, **no protocol** |
 | `features` | `{ push, share, pullToRefresh }` | toggle natives |
 | `logo` | `"./assets/logo.png"` | optional; source for `npm run assets` |
-| `iconScale` | `0.8` | optional; `1` = full-bleed, `~0.8` = padded |
+| `iconScale` | `0.8` | optional; base icon only. `1` = full-bleed, `~0.8` = padded |
 | `features.ota` | `false` | optional (Pro); needs `eas.projectId` |
 | `eas.projectId` | `"…"` | filled after `eas init`; required for push |
 
