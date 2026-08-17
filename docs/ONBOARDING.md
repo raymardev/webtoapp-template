@@ -1,6 +1,6 @@
 # New client → published, step by step
 
-The repeatable checklist behind a "Ship to Stores" delivery. Target: **a few hours**, not days.
+The repeatable checklist behind a **WebToApp Kit** delivery. Target: **a few hours**, not days.
 
 ## 0. Pre-flight (before quoting)
 
@@ -33,13 +33,20 @@ Edit the single config file:
 | `url` | `"https://app.acme.com"` | the web app to load |
 | `primaryColor` | `"#00d08c"` | brand accent |
 | `backgroundColor` | `"#0b1020"` | splash / app bg |
-| `associatedDomains` | `["app.acme.com"]` | universal links |
+| `associatedDomains` | `["app.acme.com"]` | universal links, **no protocol** |
 | `features` | `{ push, share, pullToRefresh }` | toggle natives |
+| `logo` | `"./assets/logo.png"` | optional; source for `npm run assets` |
+| `iconScale` | `0.8` | optional; `1` = full-bleed, `~0.8` = padded |
+| `features.ota` | `false` | optional (Pro); needs `eas.projectId` |
+| `eas.projectId` | `"…"` | filled after `eas init`; required for push |
 
 ## 3. Branding assets
 
 - [ ] Put the client's logo (square PNG, 1024×1024 ideal) at `assets/logo.png`
-- [ ] Run `npm run assets` — generates the icon, Android adaptive icon, splash and favicon to store standards
+- [ ] Prefer a logo with a **transparent background** — Android's notification icon is drawn
+      from the logo's silhouette, and a fully opaque logo becomes a blank white square.
+      `npm run assets` and `npm run validate` both warn when this is the case.
+- [ ] Run `npm run assets` — generates the icon, Android adaptive icon, splash, notification icon and favicon to store standards
 - [ ] `npm run validate` confirms every asset is the right size
 
 ## 4. EAS setup
@@ -60,10 +67,14 @@ eas init                 # creates the project, prints the projectId
 ## 6. Build & test
 
 ```bash
+npm run validate                               # must pass before you spend a build
+npx expo-doctor                                # dependency / config sanity
 eas build --profile preview --platform all     # internal test build
 ```
 
-- [ ] Install on a real device, verify: loads, push prompt, offline screen, back button, external links
+- [ ] Install on a **real device** (push tokens never work on a simulator), verify: loads,
+      push prompt appears, offline screen, Android back button, external links open in the
+      browser, `target="_blank"` links work, pull-to-refresh
 
 ## 7. Submit to the stores
 
@@ -90,3 +101,7 @@ eas submit --profile production --platform android
 | Push token is null | Set `eas.projectId`; test on a **real device** (not simulator) |
 | Universal links don't open | Check the `.well-known` files are served with `Content-Type: application/json` and no redirect |
 | White screen | Verify `url` is reachable over HTTPS and not blocked by CSP/`X-Frame-Options` |
+| No push prompt on Android 13+ | A notification channel must exist before the prompt shows — the template creates it first; check `features.push` is on |
+| Notification icon is a white square | The source logo has no transparency — see step 3 |
+| `target="_blank"` links do nothing on Android | Handled via `onOpenWindow`; make sure you're on a build that includes it, not an old one |
+| Deep link opens the home page | `toWebUrl` maps the link's path onto `url` — check the path exists on the web app |
