@@ -32,15 +32,18 @@ try {
 
 const isStr = (v) => typeof v === "string" && v.trim().length > 0;
 const HEX = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
-const BUNDLE = /^[a-zA-Z][a-zA-Z0-9]*(\.[a-zA-Z][a-zA-Z0-9-]*)+$/; // reverse-DNS, 2+ segments
+// Reverse-DNS, 2+ segments. No hyphens: iOS tolerates them but an Android package
+// name must be a valid Java identifier per segment, so a hyphen fails the build.
+const BUNDLE = /^[a-zA-Z][a-zA-Z0-9]*(\.[a-zA-Z][a-zA-Z0-9]*)+$/;
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const SCHEME = /^[a-z][a-z0-9+.-]*$/;
 
 // Template defaults — present means "not configured yet for this client".
 const DEFAULTS = {
-	name: "Ship Demo",
-	slug: "ship-demo",
-	bundleId: "com.shiptostores.demo",
+	name: "WebToApp Demo",
+	slug: "webtoapp-demo",
+	bundleId: "com.webtoapp.demo",
+	scheme: "webtoappdemo",
 	url: "https://docs.expo.dev",
 };
 
@@ -57,13 +60,16 @@ else ok(`slug: ${config.slug}`);
 
 // --- bundleId (immutable after first submit) ---
 if (!isStr(config.bundleId)) err("bundleId is required");
-else if (!BUNDLE.test(config.bundleId)) err(`bundleId must be reverse-DNS like com.acme.app (got "${config.bundleId}")`);
-else if (config.bundleId === DEFAULTS.bundleId) warn(`bundleId is still the template default ("${DEFAULTS.bundleId}") — it is IMMUTABLE after first submit, set it now`);
+else if (!BUNDLE.test(config.bundleId)) err(`bundleId must be reverse-DNS like com.acme.app — letters and digits only per segment, no hyphens or underscores (Android rejects them) (got "${config.bundleId}")`);
+// Blocking, not advisory: the bundleId is immutable after the first submit, so
+// shipping the template default is unrecoverable.
+else if (config.bundleId === DEFAULTS.bundleId) err(`bundleId is still the template default ("${DEFAULTS.bundleId}") — it is IMMUTABLE after first submit, set it before building`);
 else ok(`bundleId: ${config.bundleId}`);
 
 // --- scheme ---
 if (!isStr(config.scheme)) err("scheme is required");
 else if (!SCHEME.test(config.scheme)) err(`scheme must be a URL scheme (lowercase, no spaces/colon), got "${config.scheme}"`);
+else if (config.scheme === DEFAULTS.scheme) warn(`scheme is still the template default ("${DEFAULTS.scheme}")`);
 else ok(`scheme: ${config.scheme}://`);
 
 // --- url ---
@@ -74,7 +80,8 @@ if (!isStr(config.url)) {
 	try { u = new URL(config.url); } catch { /* invalid */ }
 	if (!u) err(`url is not a valid URL (got "${config.url}")`);
 	else if (u.protocol !== "https:") err(`url must be https:// (got "${u.protocol}//")`);
-	else if (config.url === DEFAULTS.url || u.host === "docs.expo.dev") warn(`url is still the template default ("${DEFAULTS.url}")`);
+	// Blocking: building this would ship an app that loads the Expo docs.
+	else if (config.url === DEFAULTS.url || u.host === "docs.expo.dev") err(`url is still the template default ("${DEFAULTS.url}") — point it at the client's web app before building`);
 	else ok(`url: ${config.url}`);
 }
 
@@ -104,10 +111,67 @@ for (const key of ["push", "share", "pullToRefresh"]) {
 	if (typeof f[key] !== "boolean") err(`features.${key} must be true or false`);
 }
 
+// --- allowedHosts (stay in-app: OAuth, checkout) ---
+if (config.allowedHosts !== undefined) {
+	if (!Array.isArray(config.allowedHosts)) {
+		err("allowedHosts must be an array of bare hosts (use [] or omit it)");
+	} else {
+		for (const h of config.allowedHosts) {
+			if (typeof h !== "string") err(`allowedHosts entries must be strings (got ${typeof h})`);
+			else if (/^https?:\/\//.test(h)) err(`allowedHosts must NOT include the protocol (got "${h}")`);
+			else if (h.includes("/")) err(`allowedHosts must be a bare host with no path (got "${h}")`);
+			else ok(`in-app host: ${h}`);
+		}
+	}
+}
+
+// --- version ---
+if (config.version !== undefined) {
+	if (!isStr(config.version) || !/^\d+(\.\d+){1,2}$/.test(config.version)) {
+		err(`version must look like 1.0.0 (got "${config.version}")`);
+	} else {
+		ok(`version: ${config.version}`);
+	}
+}
+
+// --- optional features ---
+if (f.ota !== undefined && typeof f.ota !== "boolean") err("features.ota must be true or false when set");
+
+// --- logo / iconScale ---
+if (config.logo !== undefined && !isStr(config.logo)) err("logo must be a path string when set");
+if (config.iconScale !== undefined) {
+	if (typeof config.iconScale !== "number" || Number.isNaN(config.iconScale)) {
+		err(`iconScale must be a number (got ${typeof config.iconScale})`);
+	} else if (config.iconScale <= 0 || config.iconScale > 1) {
+		err(`iconScale must be between 0 and 1 (got ${config.iconScale})`);
+	} else {
+		ok(`iconScale: ${config.iconScale}`);
+	}
+}
+
 // --- eas.projectId (needed for push) ---
 const projectId = config.eas && config.eas.projectId;
 if (f.push === true && !isStr(projectId)) {
 	warn("features.push is on but eas.projectId is empty — run `eas init` and paste the projectId, or push won't work");
+}
+// Android push needs Firebase credentials; EAS-side credentials aren't visible here,
+// so warn rather than block.
+if (f.push === true) {
+	const gsf = config.androidGoogleServicesFile;
+	if (!isStr(gsf)) {
+		warn(
+			"features.push is on but androidGoogleServicesFile is not set — Android push needs Firebase. Create a Firebase project for this bundleId, download google-services.json, and point androidGoogleServicesFile at it. (iOS push works without this.)",
+		);
+	} else if (!fs.existsSync(path.join(ROOT, gsf))) {
+		err(`androidGoogleServicesFile points at a file that does not exist: ${gsf}`);
+	} else {
+		ok(`android push credentials: ${gsf}`);
+	}
+}
+
+// OTA silently produces no `updates` config without a projectId — fail loudly instead.
+if (f.ota === true && !isStr(projectId)) {
+	err("features.ota is on but eas.projectId is empty — OTA updates would be silently disabled. Run `eas init` and paste the projectId.");
 }
 
 // --- Apple Guideline 4.2 readiness ---
@@ -136,6 +200,86 @@ function pngSize(file) {
 	return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
 }
 
+/**
+ * How solidly filled the visible part of an 8-bit RGBA PNG is: the fraction of its
+ * alpha bounding box that is non-transparent. ~1 means the artwork is a featureless
+ * rectangle. Measuring the bounding box rather than the whole canvas makes this
+ * independent of however much transparent padding surrounds the logo.
+ *
+ * Returns null if the file isn't a form we can read (interlaced, palette, 16-bit —
+ * none of which we generate). Hand-rolled so this script stays dependency-free.
+ */
+function opaqueRatio(file) {
+	try {
+		const buf = fs.readFileSync(file);
+		if (buf.readUInt32BE(0) !== 0x89504e47) return null;
+
+		let pos = 8;
+		let width = 0, height = 0, bitDepth = 0, colorType = -1, interlace = 0;
+		const idat = [];
+		while (pos + 8 <= buf.length) {
+			const len = buf.readUInt32BE(pos);
+			const type = buf.toString("ascii", pos + 4, pos + 8);
+			const data = buf.subarray(pos + 8, pos + 8 + len);
+			if (type === "IHDR") {
+				width = data.readUInt32BE(0);
+				height = data.readUInt32BE(4);
+				bitDepth = data[8];
+				colorType = data[9];
+				interlace = data[12];
+			} else if (type === "IDAT") idat.push(data);
+			else if (type === "IEND") break;
+			pos += 12 + len;
+		}
+		// Only the plain 8-bit RGBA, non-interlaced form we produce.
+		if (colorType !== 6 || bitDepth !== 8 || interlace !== 0 || !width || !height) return null;
+
+		const raw = require("node:zlib").inflateSync(Buffer.concat(idat));
+		const bpp = 4;
+		const stride = width * bpp;
+		const out = Buffer.alloc(height * stride);
+
+		// Undo the per-scanline PNG filters (spec 9.2).
+		for (let y = 0; y < height; y++) {
+			const filter = raw[y * (stride + 1)];
+			const src = raw.subarray(y * (stride + 1) + 1, y * (stride + 1) + 1 + stride);
+			const cur = out.subarray(y * stride, y * stride + stride);
+			const prior = y > 0 ? out.subarray((y - 1) * stride, (y - 1) * stride + stride) : null;
+			for (let x = 0; x < stride; x++) {
+				const a = x >= bpp ? cur[x - bpp] : 0;
+				const b = prior ? prior[x] : 0;
+				const c = prior && x >= bpp ? prior[x - bpp] : 0;
+				let v = src[x];
+				if (filter === 1) v += a;
+				else if (filter === 2) v += b;
+				else if (filter === 3) v += (a + b) >> 1;
+				else if (filter === 4) {
+					const p = a + b - c;
+					const pa = Math.abs(p - a), pb = Math.abs(p - b), pc = Math.abs(p - c);
+					v += pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
+				} else if (filter !== 0) return null;
+				cur[x] = v & 0xff;
+			}
+		}
+
+		let opaque = 0, minX = width, minY = height, maxX = -1, maxY = -1;
+		for (let y = 0; y < height; y++) {
+			for (let x = 0; x < width; x++) {
+				if (out[y * stride + x * bpp + 3] <= 16) continue;
+				opaque++;
+				if (x < minX) minX = x;
+				if (x > maxX) maxX = x;
+				if (y < minY) minY = y;
+				if (y > maxY) maxY = y;
+			}
+		}
+		if (maxX < 0) return 0; // fully transparent
+		return opaque / ((maxX - minX + 1) * (maxY - minY + 1));
+	} catch {
+		return null;
+	}
+}
+
 const checkAsset = (rel, { square1024 = false } = {}) => {
 	const p = path.join(ROOT, rel);
 	if (!fs.existsSync(p)) { err(`missing ${rel} — run \`npm run assets\``); return; }
@@ -151,7 +295,21 @@ const checkAsset = (rel, { square1024 = false } = {}) => {
 checkAsset("assets/icon.png", { square1024: true });
 checkAsset("assets/adaptive-icon.png", { square1024: true });
 checkAsset("assets/splash-icon.png");
+checkAsset("assets/notification-icon.png");
 checkAsset("assets/favicon.png");
+
+// Android paints the notification icon from its alpha channel alone, so a fully
+// opaque one renders as a blank white square on every notification. Catch that here
+// rather than after the first push lands in front of real users.
+const notifPath = path.join(ROOT, "assets/notification-icon.png");
+if (fs.existsSync(notifPath)) {
+	const ratio = opaqueRatio(notifPath);
+	if (ratio !== null && ratio > 0.95) {
+		warn(
+			"assets/notification-icon.png is fully opaque — Android will show a blank white square on every notification. Use a logo with a transparent background, or hand-draw a white-on-transparent 96×96.",
+		);
+	}
+}
 
 // --- report ---
 const C = { green: "\x1b[32m", yellow: "\x1b[33m", red: "\x1b[31m", reset: "\x1b[0m" };

@@ -7,10 +7,11 @@
 //   npm run assets -- ./logo.png   # or pass a path
 //
 // Output (Expo then auto-generates every platform size from these at build):
-//   assets/icon.png            1024×1024, opaque        (iOS + Android base)
-//   assets/adaptive-icon.png   1024×1024, transparent   (Android adaptive foreground)
-//   assets/splash-icon.png     1024×1024, transparent   (splash screen)
-//   assets/favicon.png         48×48                    (web)
+//   assets/icon.png               1024×1024, opaque      (iOS + Android base)
+//   assets/adaptive-icon.png      1024×1024, transparent (Android adaptive foreground)
+//   assets/splash-icon.png        1024×1024, transparent (splash screen)
+//   assets/notification-icon.png  96×96, white silhouette (Android status bar)
+//   assets/favicon.png            48×48                  (web)
 import { Jimp } from "jimp";
 import { existsSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
@@ -56,6 +57,48 @@ console.log(`\nWebToApp Kit — generating assets from ${src}\n`);
 await compose(1024, BG, ICON_SCALE, "icon.png", `1024×1024, opaque (logo scale ${ICON_SCALE})`);
 await compose(1024, TRANSPARENT, 0.66, "adaptive-icon.png", "1024×1024, transparent (Android safe zone)");
 await compose(1024, TRANSPARENT, 0.5, "splash-icon.png", "1024×1024, transparent (splash)");
+
+// Android renders the status-bar notification icon as a flat silhouette: it keeps
+// only the alpha channel and paints it white. Produce that shape ourselves so the
+// system doesn't fall back to a featureless white square.
+const notif = await Jimp.read(src);
+notif.scaleToFit({ w: 72, h: 72 });
+
+// A logo with no transparency has no silhouette to extract — every pixel is opaque,
+// so the result is a solid white block. Say so instead of shipping a blank icon.
+const alpha = notif.bitmap.data;
+let opaquePixels = 0;
+for (let i = 3; i < alpha.length; i += 4) if (alpha[i] > 16) opaquePixels++;
+const opaqueRatio = opaquePixels / (alpha.length / 4);
+
+notif.scan(0, 0, notif.bitmap.width, notif.bitmap.height, (x, y, idx) => {
+	notif.bitmap.data[idx] = 255;
+	notif.bitmap.data[idx + 1] = 255;
+	notif.bitmap.data[idx + 2] = 255;
+});
+const notifCanvas = new Jimp({ width: 96, height: 96, color: TRANSPARENT });
+notifCanvas.composite(
+	notif,
+	Math.round((96 - notif.bitmap.width) / 2),
+	Math.round((96 - notif.bitmap.height) / 2),
+);
+await notifCanvas.write(join(ASSETS, "notification-icon.png"));
+if (opaqueRatio > 0.95) {
+	console.log(
+		`⚠ assets/${"notification-icon.png".padEnd(20)} 96×96 — source logo has no transparency,`,
+	);
+	console.log(
+		`  so this is a solid white block. Android will show a featureless square on every`,
+	);
+	console.log(
+		`  notification. Supply a logo with a transparent background, or hand-draw a white-on-`,
+	);
+	console.log(`  transparent 96×96 at assets/notification-icon.png.`);
+} else {
+	console.log(
+		`✓ assets/${"notification-icon.png".padEnd(20)} 96×96, white silhouette (Android status bar)`,
+	);
+}
 
 const fav = await Jimp.read(src);
 fav.scaleToFit({ w: 48, h: 48 });

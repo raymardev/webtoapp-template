@@ -10,15 +10,19 @@
  * @type {import("./src/webtoapp.types").ClientConfig}
  */
 const config = {
-	name: "Ship Demo",
-	slug: "ship-demo",
-	bundleId: "com.shiptostores.demo",
-	scheme: "shipdemo",
+	name: "WebToApp Demo",
+	slug: "webtoapp-demo",
+	bundleId: "com.webtoapp.demo",
+	scheme: "webtoappdemo",
 	url: "https://docs.expo.dev",
+	version: "1.0.0",
 	logo: "./assets/logo.png",
 	primaryColor: "#00d08c",
 	backgroundColor: "#050a18",
 	associatedDomains: [],
+	// Hosts that must stay in-app rather than open in the system browser —
+	// OAuth providers, hosted checkout. e.g. "accounts.google.com".
+	allowedHosts: [],
 	features: {
 		push: true,
 		share: true,

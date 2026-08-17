@@ -2,15 +2,18 @@ import type { ExpoConfig } from "expo/config";
 import client from "./client.config";
 
 /**
- * Generates the full Expo config from client.config.ts.
- * You normally never touch this file — edit client.config.ts instead.
+ * Generates the full Expo config from client.config.js.
+ * You normally never touch this file — edit client.config.js instead.
  */
 // Pro / Autopilot: over-the-air JS updates — only when enabled and a project id is set.
 const otaConfig: Partial<ExpoConfig> =
 	client.features.ota && client.eas?.projectId
 		? {
 			updates: { url: `https://u.expo.dev/${client.eas.projectId}` },
-			runtimeVersion: { policy: "appVersion" },
+			// "fingerprint" bumps the runtime version whenever anything affecting the
+			// native runtime changes. "appVersion" only tracks `version`, so forgetting
+			// to bump it ships a JS update to a binary that cannot run it.
+			runtimeVersion: { policy: "fingerprint" },
 		}
 		: {};
 
@@ -18,7 +21,7 @@ const config: ExpoConfig = {
 	name: client.name,
 	slug: client.slug,
 	scheme: client.scheme,
-	version: "1.0.0",
+	version: client.version ?? "1.0.0",
 	orientation: "portrait",
 	icon: "./assets/icon.png",
 	userInterfaceStyle: "automatic",
@@ -26,9 +29,25 @@ const config: ExpoConfig = {
 		bundleIdentifier: client.bundleId,
 		supportsTablet: true,
 		associatedDomains: client.associatedDomains.map((d) => `applinks:${d}`),
+		infoPlist: {
+			// A WebView wrapper only uses HTTPS/standard crypto, so this is exempt.
+			// Declaring it here answers App Store Connect's export-compliance question
+			// automatically instead of once per submission.
+			ITSAppUsesNonExemptEncryption: false,
+			// iOS terminates the app if the web app requests camera/mic/photos without
+			// a purpose string. Required because the WebView allows getUserMedia and
+			// `<input type="file" capture>`; Apple also rejects vague wording.
+			NSCameraUsageDescription: `${client.name} uses the camera when you take or upload a photo.`,
+			NSMicrophoneUsageDescription: `${client.name} uses the microphone when you record audio or video.`,
+			NSPhotoLibraryUsageDescription: `${client.name} needs your photo library so you can upload images.`,
+		},
 	},
 	android: {
 		package: client.bundleId,
+		// Firebase credentials for push. Omitted when unset so a no-push app still builds.
+		...(client.androidGoogleServicesFile
+			? { googleServicesFile: client.androidGoogleServicesFile }
+			: {}),
 		adaptiveIcon: {
 			foregroundImage: "./assets/adaptive-icon.png",
 			backgroundColor: client.backgroundColor,
@@ -53,10 +72,20 @@ const config: ExpoConfig = {
 				backgroundColor: client.backgroundColor,
 			},
 		],
-		"expo-notifications",
+		[
+			"expo-notifications",
+			{
+				// Android draws the status-bar notification icon as a silhouette. Without
+				// a dedicated white-on-transparent icon it falls back to the app icon and
+				// usually renders as a featureless white square.
+				icon: "./assets/notification-icon.png",
+				color: client.primaryColor,
+			},
+		],
 	],
 	extra: {
-		shipUrl: client.url,
+		url: client.url,
+		allowedHosts: client.allowedHosts ?? [],
 		primaryColor: client.primaryColor,
 		backgroundColor: client.backgroundColor,
 		features: client.features,

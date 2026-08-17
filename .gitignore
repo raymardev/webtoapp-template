@@ -18,6 +18,13 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
+# Store credentials — eas.json points at these by path; never commit them
+google-service-account.json
+*-service-account.json
+google-services.json
+GoogleService-Info.plist
+AuthKey_*.p8
+
 # Metro
 .metro-health-check*
 

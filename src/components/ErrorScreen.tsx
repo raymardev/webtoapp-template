@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { config } from "../theme";
+import { config, foreground } from "../theme";
 
 type Props = {
 	emoji: string;
@@ -13,8 +13,8 @@ export default function ErrorScreen({ emoji, title, subtitle, onRetry }: Props) 
 	return (
 		<View style={[styles.container, { backgroundColor: config.backgroundColor }]}>
 			<Text style={styles.emoji}>{emoji}</Text>
-			<Text style={styles.title}>{title}</Text>
-			<Text style={styles.subtitle}>{subtitle}</Text>
+			<Text style={[styles.title, { color: foreground.primary }]}>{title}</Text>
+			<Text style={[styles.subtitle, { color: foreground.secondary }]}>{subtitle}</Text>
 			<Pressable
 				onPress={onRetry}
 				style={({ pressed }) => [
@@ -41,8 +41,8 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 32,
 	},
 	emoji: { fontSize: 48, marginBottom: 16 },
-	title: { color: "#fff", fontSize: 22, fontWeight: "600", marginBottom: 8 },
-	subtitle: { color: "#9ca3af", fontSize: 15, textAlign: "center", marginBottom: 24 },
+	title: { fontSize: 22, fontWeight: "600", marginBottom: 8 },
+	subtitle: { fontSize: 15, textAlign: "center", marginBottom: 24 },
 	button: { paddingHorizontal: 28, paddingVertical: 14, borderRadius: 12 },
 	buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
 });

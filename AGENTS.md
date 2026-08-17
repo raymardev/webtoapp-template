@@ -11,9 +11,9 @@ Read this whole file before doing anything. Then follow "The whole job" below.
 
 ## 🚨 Non-negotiable rules
 
-1. **Use the versioned Expo docs.** This template targets **Expo SDK 56 / React Native 0.85**.
+1. **Use the versioned Expo docs.** This template targets **Expo SDK 57 / React Native 0.86**.
    Before writing or changing any native/Expo code, read the exact versioned docs at
-   <https://docs.expo.dev/versions/v56.0.0/>. APIs differ between SDKs — do not rely on memory.
+   <https://docs.expo.dev/versions/v57.0.0/>. APIs differ between SDKs — do not rely on memory.
 2. **Edit `client.config.js` only.** That is THE per-client file. Do **not** modify `src/`,
    `app.config.ts`, or `eas.json` to make a normal app work — everything is driven by config.
    Touch `src/` only when explicitly extending the template itself.
@@ -58,25 +58,31 @@ see [`docs/ONBOARDING.md`](./docs/ONBOARDING.md).
 | `scheme` | string | Deep-link scheme, one word. | `"acme"` → `acme://` |
 | `url` | string | The web app the wrapper loads. Must be HTTPS and not block framing. | `"https://app.acme.com"` |
 | `logo` | string | Source logo for `npm run assets` (square PNG, 1024×1024). Default `./assets/logo.png`. | `"./assets/logo.png"` |
-| `iconScale` | number? | Icon fill: `1` = full-bleed (a finished/square logo), `~0.8` = padded on bg (a bare symbol). Default `0.8`. | `1` |
-| `primaryColor` | string | Brand accent (loaders, pull-to-refresh spinner). | `"#00d08c"` |
+| `iconScale` | number? | Fill for the **base icon** only: `1` = full-bleed (a finished/square logo), `~0.8` = padded on bg (a bare symbol). Default `0.8`. The Android adaptive icon (66% safe zone) and splash mark (50%) keep fixed insets. | `1` |
+| `primaryColor` | string | Brand accent (loading spinner, error-screen button). | `"#00d08c"` |
 | `backgroundColor` | string | Splash / app background. | `"#0b1020"` |
 | `associatedDomains` | string[] | Domains for iOS universal links + Android app links. **No protocol.** Empty `[]` if not using links. | `["app.acme.com"]` |
+| `allowedHosts` | string[]? | Extra hosts that stay **inside** the app. Anything off `url`'s host opens in the system browser, which breaks OAuth / hosted checkout — list those hosts here. | `["accounts.google.com"]` |
+| `version` | string? | Marketing version. Bump per store release. Default `"1.0.0"`. | `"1.2.0"` |
 | `features.push` | boolean | Register for push (expo-notifications). Strong 4.2 signal — keep `true`. | `true` |
 | `features.share` | boolean | Native share via `window.WebToAppBridge`. | `true` |
-| `features.pullToRefresh` | boolean | Pull down to reload. | `true` |
+| `features.pullToRefresh` | boolean | Pull down to reload. **iOS only** — no-op on Android. | `true` |
 | `features.ota` | boolean? | **Pro/Autopilot:** over-the-air JS updates (expo-updates). Needs `eas.projectId`. Off by default. | `true` |
+| `androidGoogleServicesFile` | string? | Path to Firebase `google-services.json`. **Required for Android push** (iOS doesn't need it). | `"./google-services.json"` |
 | `eas.projectId` | string | Filled after `eas init`. Required for push to work. | `"..."` |
 
 Validate your work after editing — run, in order:
 
 - **`npm run validate`** — WebToApp Kit pre-flight: checks every config field and runs the Apple
-  4.2 readiness gate. It **fails (exit 1) on a bare WebView** with no native features. This is
-  your go/no-go before building.
+  4.2 readiness gate. It **fails (exit 1) on a bare WebView** with no native features, and also
+  while `bundleId` or `url` are still the template defaults — a freshly cloned repo is expected
+  to fail this until you configure it. This is your go/no-go before building.
 - **`npx expo config`** — confirms the config resolves into a valid Expo config (bundle id,
   plugins, `extra`).
-- `npx tsc --noEmit` typechecks the template's TypeScript in `src/`. (The JSDoc `@type` in
-  `client.config.js` gives editor autocomplete/errors; `tsc` does not check the `.js` config.)
+- `npx tsc --noEmit` typechecks `src/` **and** `client.config.js` — the file's `// @ts-check`
+  plus its JSDoc `@type {ClientConfig}` check every field against the schema, including
+  misspelled keys (`iconScael` is reported as an unknown property).
+- `npm run doctor` (`expo-doctor`) — dependency/config sanity against the installed SDK.
 
 ---
 
@@ -102,11 +108,29 @@ gets approval **without touching the founder's web app**:
 
 - Native push (`src/native/push.ts`), deep/universal links (`src/native/linking.ts`),
   native share + a `window.WebToAppBridge` (`src/native/bridge.ts`)
-- Robust WebView: loading, error-with-retry, offline screen, pull-to-refresh, safe areas,
+- Robust WebView: loading, error-with-retry, offline screen, pull-to-refresh (iOS), safe areas,
   Android hardware back, external links open in the system browser (`src/WebViewScreen.tsx`)
 
 If you remove these to "keep it simple," you reintroduce the 4.2 rejection. Keep push + at
 least one more native feature live.
+
+### The web bridge (what the founder's web app can call)
+
+Available on `window.WebToAppBridge` before the page's own scripts run; a
+`WebToAppBridgeReady` event also fires.
+
+| Call | Effect |
+|------|--------|
+| `WebToAppBridge.share({ title, message, url })` | Native share sheet (needs `features.share`) |
+| `WebToAppBridge.setBadge(n)` | App icon badge count |
+| `WebToAppBridge.ready()` | Posts a boot signal. Currently a **no-op** reserved hook — the loader is cleared by page load, not by this |
+| `WebToAppBridge.pushToken` | Expo push token, once registered |
+| `window.addEventListener("WebToAppPushToken", e => e.detail)` | Same token, as it arrives |
+
+Send a push with `data: { url: "https://app.acme.com/orders/42" }` and tapping it opens that
+route in the WebView. A relative `"/orders/42"` works too. The URL is **pinned to `url`'s
+origin** — a push pointing anywhere else is ignored, and `allowedHosts` does **not** widen
+this. None of this is required — the web app works untouched without it.
 
 ---
 
@@ -122,9 +146,11 @@ npx tsc --noEmit                  # typecheck the template's TypeScript (src/)
 npx expo config                   # the real config check — must resolve without error
 npx expo export --platform ios    # validate the JS bundle builds
 eas init / eas build / eas submit # create project / build / ship (eas-cli, founder's account)
-npm run release                   # Pro/Autopilot: one-command production build + submit
-npm run ota -- "what changed"     # Pro/Autopilot: push an OTA JS update (no store review)
 ```
+
+> `npm run release` and `npm run ota` are **Kit Pro** scripts — they do not exist in this free
+> template. Don't tell a founder to run them here; use the `eas build` / `eas update` commands
+> above instead.
 
 ---
 

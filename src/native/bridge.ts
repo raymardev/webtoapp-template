@@ -42,9 +42,18 @@ export function parseBridgeMessage(raw: string): BridgeMessage | null {
 	}
 }
 
-/** Pushes the Expo push token into the web app via a CustomEvent it can listen for. */
+/**
+ * Pushes the Expo push token into the web app via a CustomEvent it can listen for,
+ * and stores it on the bridge so a listener that registered late can still read it.
+ *
+ * `ShipPushToken` is the pre-rename event name, still dispatched for compatibility.
+ */
 export function pushTokenScript(token: string): string {
-	return `window.dispatchEvent(new CustomEvent('ShipPushToken', { detail: ${JSON.stringify(
-		token,
-	)} })); true;`;
+	const json = JSON.stringify(token);
+	return `(function () {
+  if (window.WebToAppBridge) { window.WebToAppBridge.pushToken = ${json}; }
+  window.dispatchEvent(new CustomEvent('WebToAppPushToken', { detail: ${json} }));
+  window.dispatchEvent(new CustomEvent('ShipPushToken', { detail: ${json} }));
+})();
+true;`;
 }

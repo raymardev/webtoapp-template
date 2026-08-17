@@ -1,7 +1,7 @@
 # WebToApp Kit — turn your web app into a native app that passes Apple review
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-22c55e.svg)](./LICENSE)
-[![Expo SDK 56](https://img.shields.io/badge/Expo-SDK%2056-000.svg?logo=expo)](https://docs.expo.dev/versions/v56.0.0/)
+[![Expo SDK 57](https://img.shields.io/badge/Expo-SDK%2057-000.svg?logo=expo)](https://docs.expo.dev/versions/v57.0.0/)
 [![Passes Apple 4.2](https://img.shields.io/badge/Apple-built%20to%20pass%204.2-0a84ff.svg?logo=apple)](#why-apple-rejects-web-wrappers--and-how-this-passes)
 
 > Wrap your **web app or PWA** into a native **iOS + Android** app — by editing **one file**.
@@ -17,10 +17,11 @@ You built a great web app. The stores want a *native* one — and Apple **reject
 
 ```bash
 1. npx degit raymardev/webtoapp-template my-app   # fresh copy
-2. edit client.config.js                          # name, bundleId, url, color, domains  ← the only file
-3. drop your logo at assets/logo.png → npm run assets   # generates every icon + splash
-4. npm run validate                               # config + Apple 4.2 gate + asset standards
-5. eas init && eas build && eas submit            # build & ship (your Apple/Google accounts)
+2. cd my-app && npm install                       # Node 22.13+
+3. edit client.config.js                          # name, bundleId, url, color, domains  ← the only file
+4. drop your logo at assets/logo.png → npm run assets   # generates every icon + splash
+5. npm run validate                               # config + Apple 4.2 gate + asset standards
+6. eas init && eas build && eas submit            # build & ship (your Apple/Google accounts)
 ```
 
 `client.config.js` is the **only** file you edit.
@@ -33,7 +34,7 @@ native capabilities that earn approval — **without changing a line of your web
 - **Robust WebView** — native loading, error screen with retry, external links open in the system browser
 - **Push notifications** (`expo-notifications`) — auto token registration, forwarded to your web app via `window.WebToAppBridge`
 - **Deep / universal links** — open web routes from notifications and links (iOS `associatedDomains` + Android `intentFilters`)
-- **Offline screen** with auto-retry, **pull-to-refresh**, **safe areas**, **Android hardware back**
+- **Offline screen** with auto-retry, **pull-to-refresh** (iOS), **safe areas**, **Android hardware back**
 - **Native share** + a documented **`window.WebToAppBridge`** (web ↔ native messaging)
 
 Keep push + at least one native feature on — that's what gets you past 4.2. The `npm run validate`
@@ -87,9 +88,21 @@ walks you through the build. The full conversational autopilot (the `ship-my-app
 Your web app can opt into native features — no native code:
 
 ```js
+// Native share sheet
 window.WebToAppBridge?.share({ title: "Acme", message: "Check this", url: location.href });
-window.addEventListener("ShipPushToken", (e) => console.log("push token", e.detail));
+
+// App icon badge
+window.WebToAppBridge?.setBadge(3);
+
+// The Expo push token, once the device has registered
+window.addEventListener("WebToAppPushToken", (e) => console.log("push token", e.detail));
+// …or read it later, if you subscribed after it arrived:
+const token = window.WebToAppBridge?.pushToken;
 ```
+
+The bridge is defined before your page scripts run, and fires a `WebToAppBridgeReady` event.
+Send a push with `data: { url: "https://app.acme.com/orders/42" }` and tapping the notification
+opens that route.
 
 ## Structure
 
